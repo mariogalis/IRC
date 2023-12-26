@@ -2,14 +2,19 @@
 # define SERVER_HPP
 
 #include "Irc.hpp"
+#include <stdlib.h>
 
 class Server
 {
     public:
         Server(std::string const port, std::string const password);
         ~Server();
-        void start();
+        int start();
     private:
-        std::string_port;
-        std::string_pass;
-}
+        Server(const Server &other);
+        Server	&operator=(const Server &other);
+        std::string _port;
+        std::string _pass;
+};
+
+#endif

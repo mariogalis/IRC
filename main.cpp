@@ -1,4 +1,5 @@
 #include "Irc.hpp"
+#include "Server.hpp"
 
 std::string checkport(std::string port)
 {
@@ -55,7 +56,7 @@ int main(int argc, char **argv)
     port = checkport(argv[1]);
     pass = checkpass(argv[2]);
 
-    //Server srv(port, pass);
-    //srv.start();
+    Server srv(port, pass);
+    srv.start();
     return(0);
 }

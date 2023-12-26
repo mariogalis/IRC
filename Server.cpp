@@ -17,7 +17,86 @@ Server &Server::operator=(const Server &other)
     if (this != &other)
     {
         _port = other._port;
-        _password = other._password;
+        _pass = other._pass;
     }
+    return(*this);
+}
+
+int Server::start()
+{
+
+    std::string name;
+    char buffername[1024];
+    // Crear un socket
+    int server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_socket == -1) {
+        std::cerr << "Error al crear el socket." << std::endl;
+        return -1;
+    }
+
+    // Configurar la dirección del servidor
+    struct sockaddr_in server_address;
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons((stoi(_port)));  // Puerto estándar IRC
+    server_address.sin_addr.s_addr = INADDR_ANY;
+
+    // Vincular el socket a la dirección del servidor
+    if (bind(server_socket, (struct sockaddr*)&server_address, sizeof(server_address)) == -1) {
+        std::cerr << "Error al vincular el socket." << std::endl;
+        close(server_socket);
+        return -1;
+    }
+
+    // Escuchar en el socket
+    if (listen(server_socket, 10) == -1) {
+        std::cerr << "Error al intentar escuchar en el socket." << std::endl;
+        close(server_socket);
+        return -1;
+    }
+
+    std::cout << "Servidor IRC escuchando en el puerto " << GREEN << _port << "..." << NOCOLOR << std::endl;
+
+    // Aceptar conexiones entrantes
+    while (true) {
+        int client_socket = accept(server_socket, nullptr, nullptr);
+        if (client_socket == -1) {
+            perror("Error al aceptar la conexión del cliente");
+            continue;
+        }
+
+        std::cout << "Cliente conectado." << std::endl;
+        recv(client_socket, buffername, sizeof(buffername), 0);
+        name = buffername;
+        // Ciclo para recibir y procesar mensajes del cliente
+        while (true) {
+            char buffer[1024];
+            ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
+
+            if (bytes_received <= 0) {
+                if (bytes_received == 0) {
+                    std::cout << "Cliente desconectado." << std::endl;
+                } else {
+                    perror("Error al recibir datos del cliente");
+                }
+                break;
+            }
+
+            buffer[bytes_received] = '\0';
+            std::cout << name << ": " << buffer << std::endl;
+
+            // Envio un mensaje parea decirle que todo salio chido
+            const char* response = "Mensaje recibido correctamente.";
+            send(client_socket, response, strlen(response), 0);
+        }
+
+        // Cerrar el socket del cliente después de todos los mensajes
+        //close(client_socket);
+    }
+
+    // Cerrar el socket del servidor
+    close(server_socket);
+
+    return 0;
+
 }
 
