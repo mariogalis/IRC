@@ -3,7 +3,10 @@
 
 #include "Irc.hpp"
 #include <stdlib.h>
-
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <algorithm> 
 class Server
 {
     public:
@@ -15,6 +18,8 @@ class Server
         Server	&operator=(const Server &other);
         std::string _port;
         std::string _pass;
+        std::vector<std::string> users;
+        //std::map<std::string, Channel> channels;
 };
 
 #endif
