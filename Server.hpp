@@ -7,12 +7,16 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <algorithm> 
+#define MAX_CLIENTS 10
+#define SIZE 1024
 class Server
 {
     public:
         Server(std::string const port, std::string const password);
         ~Server();
-        int start();
+        int Start();
+        int create_socket();
+        int WaitClient(int server_socket);
     private:
         Server(const Server &other);
         Server	&operator=(const Server &other);

@@ -57,6 +57,6 @@ int main(int argc, char **argv)
     pass = checkpass(argv[2]);
 
     Server srv(port, pass);
-    srv.start();
+    srv.Start();
     return(0);
 }
