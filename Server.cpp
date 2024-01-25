@@ -61,7 +61,7 @@ int Server::create_socket()
     }
 
     // Imprimir un mensaje indicando que el servidor ha comenzado exitosamente
-    printf("server start\n");
+    std::cerr << "server start" << std::endl;
 
     // Devolver el descriptor de archivo del socket del servidor
     return server_socket;
@@ -92,10 +92,11 @@ int Server::WaitClient(int server_socket)
             if (pollfds[0].revents & POLLIN)
             {
                 // Aceptar la conexión entrante
+                
                 struct sockaddr_in cliaddr;
-                //int addrlen = sizeof(cliaddr);
-                int client_socket = accept(server_socket, (struct sockaddr *)&cliaddr, NULL); //NULL debeia ser &addrlen
-                printf("accept success %s\n", inet_ntoa(cliaddr.sin_addr));
+                socklen_t addrlen = sizeof(cliaddr);
+                int client_socket = accept(server_socket, (struct sockaddr *)&cliaddr, &addrlen); //NULL debeia ser &addrlen
+                //printf("accept success %s\n", inet_ntoa(cliaddr.sin_addr));
 
                 // Buscar un espacio libre en el arreglo de estructuras pollfd para almacenar el nuevo descriptor de archivo del cliente
                 for (int i = 1; i < MAX_CLIENTS; i++)
@@ -114,21 +115,17 @@ int Server::WaitClient(int server_socket)
             // Verificar eventos de lectura en los sockets de los clientes existentes
             for (int i = 1; i < MAX_CLIENTS; i++)
             {
+                //std::cerr << pollfds[i].revents << std::endl;
                 if (pollfds[i].fd > 0 && pollfds[i].revents & POLLIN)
                 {
+                    std::cerr << "numero de eventos recibidos: " << pollfds[i].revents << std::endl;
+                    
                     char buf[SIZE];
                     int bufSize = read(pollfds[i].fd, buf, SIZE - 1);
                     if (bufSize == -1)
                     {
                         // Error de lectura, cerrar el socket del cliente y actualizar el estado
-                        pollfds[i].fd = 0;
-                        pollfds[i].events = 0;
-                        pollfds[i].revents = 0;
-                        useClient--;
-                    }
-                    else if (bufSize == 0)
-                    {
-                        // Conexión cerrada por el cliente, cerrar el socket del cliente y actualizar el estado
+                        std::cerr << "Error de lectura, cerrar el socket del cliente y actualizar el estado" << std::endl;
                         pollfds[i].fd = 0;
                         pollfds[i].events = 0;
                         pollfds[i].revents = 0;
@@ -138,7 +135,7 @@ int Server::WaitClient(int server_socket)
                     {
                         // Datos recibidos del cliente, imprimir
                         buf[bufSize] = '\0';
-                        printf("From client: %s\n", buf);
+                        std::cerr << "client :" << buf << std::endl;
                     }
                 }
             }
@@ -152,7 +149,7 @@ int Server::Start()
 
     int client_socket = WaitClient(server_socket);
 
-    printf("server end\n");
+    std::cerr << "server end" << std::endl;
 
     close(client_socket);
     close(server_socket);
