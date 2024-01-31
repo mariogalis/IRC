@@ -67,92 +67,166 @@ int Server::create_socket()
     return server_socket;
 }
 
-int Server::WaitClient(int server_socket)
+std::string Separate(std::string input, int pos)
 {
-    // Declarar un arreglo de estructuras pollfd para monitorear eventos en los sockets del servidor y clientes
-    struct pollfd pollfds[MAX_CLIENTS + 1];
-    pollfds[0].fd = server_socket;
-    pollfds[0].events = POLLIN | POLLPRI;  // Monitorear eventos de lectura en el socket del servidor
-    int useClient = 0;
-
-    while (1)
+    std::istringstream iss(input); // Stream de entrada asociado a la cadena RECORDAR QUE NO TOMO EN CUENTA LOS ESPACIOS NI EN CONTRASEÑA NI USUARIOS
+    int i = 0;
+    std::string word;
+    if(pos == 0)
     {
-        // Esperar eventos en los sockets usando poll
-        int pollResult = poll(pollfds, useClient + 1, 5000); //monitorear eventos en múltiples descriptores de archivos de manera no bloqueante
-        //pollfds: contiene la configuración de los descriptores de archivos que se deben monitorear
-        //useClient + 1: Representa el número total de elementos en el arreglo pollfds. +1, se garantiza que la función poll revisará todos los elementos del arreglo, desde pollfds[0] hasta pollfds[useClient]
-        //5000: Es el tiempo máximo de espera en milisegundos para que ocurra un evento en algún descriptor de archivo 5 seg
-        //pollResult: almacena el resultado de la llamada a poll. Después de la llamada, pollResult contendrá la cantidad de descriptores de archivos que tienen eventos pendientes, o un valor específico indicando el resultado de la operación
-        //Si pollResult es igual a 0, no se detectaron eventos antes de que expirara el tiempo de espera
-        //Si pollResult es mayor que 0, indica cuántos descriptores de archivos tienen eventos pendientes
-        //Si pollResult es igual a -1, indica que se produjo un error durante la llamada a poll
-        if (pollResult > 0) // Si hay eventos disponibles
-        {
-            // Verificar si hay una conexión entrante en el socket del servidor
-            if (pollfds[0].revents & POLLIN)
-            {
-                // Aceptar la conexión entrante
-                
-                struct sockaddr_in cliaddr;
-                socklen_t addrlen = sizeof(cliaddr);
-                int client_socket = accept(server_socket, (struct sockaddr *)&cliaddr, &addrlen); //NULL debeia ser &addrlen
-                //printf("accept success %s\n", inet_ntoa(cliaddr.sin_addr));
+        iss >> word;
+        return word;
+    }
+    while (iss >> word && i <= pos) 
+    {
+        //std::cout << "Palabra: " << word << std::endl;
+    }
+    return word;
+}
 
-                // Buscar un espacio libre en el arreglo de estructuras pollfd para almacenar el nuevo descriptor de archivo del cliente
-                for (int i = 1; i < MAX_CLIENTS; i++)
-                {
-                    if (pollfds[i].fd == 0)
-                    {
-                        // Asignar el descriptor de archivo del cliente al arreglo de estructuras pollfd
-                        pollfds[i].fd = client_socket;
-                        pollfds[i].events = POLLIN | POLLPRI;
-                        useClient++;
-                        break;
-                    }
-                }
+bool Server::CheckPassword(std::string buffer)
+{
+    if(Separate(buffer, 0) != "PASS")
+        return false;
+    buffer = Separate(buffer, 1);
+    if(_pass == buffer)
+        return true;
+    else
+        return false;
+}
+
+bool Server::CheckNickName(char * buffer)
+{
+    if(Separate(buffer, 0) == "NICK")
+        return true;
+    else 
+        return false;
+}
+
+int Server::Try_01()
+{
+    int server_socket, client_socket;
+    struct sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    char buffer[BUFFER_SIZE];
+    //int  event_client;
+
+    server_socket =  create_socket();
+    std::cout << "Servidor IRC escuchando en el puerto " << _port << std::endl;
+
+
+    while (true) {
+        struct pollfd fds[MAX_CLIENTS + 1];
+        fds[0].fd = server_socket;
+        fds[0].events = POLLIN;
+
+        for (size_t i = 0; i < clientes.size(); ++i) 
+        {
+            fds[i + 1].fd = clientes[i].getSocket();
+            fds[i + 1].events = POLLIN;
+        }
+
+        int num_ready = poll(fds, clientes.size() + 1, -1);
+        if (num_ready < 0) 
+        {
+            std::cerr << "Error en poll()" << std::endl;
+            break;
+        }
+
+        if (fds[0].revents & POLLIN) {
+            client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &client_len);
+            if (client_socket < 0) 
+            {
+                std::cerr << "Error al aceptar la conexión" << std::endl;
+                continue;
+            }
+            std::cout << "Cliente conectado" << std::endl;
+
+            // Recibir la contraseña
+            memset(buffer, 0, BUFFER_SIZE);
+            int bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
+            if (bytes_received <= 0) 
+            {
+                std::cerr << "Error al recibir el nombre del cliente" << std::endl;
+                close(client_socket);
+                continue;
             }
 
-            // Verificar eventos de lectura en los sockets de los clientes existentes
-            for (int i = 1; i < MAX_CLIENTS; i++)
+            if(CheckPassword(buffer) == false)
             {
-                //std::cerr << pollfds[i].revents << std::endl;
-                if (pollfds[i].fd > 0 && pollfds[i].revents & POLLIN)
+                //write(client_socket, "Wrong password", 15); ESTO DEBERIA ENVIAR UN MENSAJE AL USUARIO
+                std::cerr << "The client tried to log in with an incorrect password" << std::endl;
+                close(client_socket);
+                continue;
+            }
+            recv(client_socket, buffer, BUFFER_SIZE, 0);
+            if(CheckNickName(buffer) == false)
+            {
+                std::cerr << "The client tries to log with wrong nickname" << std::endl;
+                close(client_socket);
+                continue;
+            }
+            else
+            {
+                std::string nickname = Separate(buffer, 1);
+                std::cout << "<" << nickname << ">" << " acaba de entrar al servidor!" << std::endl;
+                recv(client_socket, buffer, BUFFER_SIZE, 0);
+                clientes.push_back(ClientData(client_socket, nickname));
+            }
+
+            // std::cerr << "client_socket :\n" << client_socket << std::endl;
+            // std::cerr << "buffer :\n" << buffer << std::endl;
+            // Agregar el cliente al vector de clientes
+        }
+
+        for (size_t i = 0; i < clientes.size(); ++i) 
+        {
+            if (fds[i + 1].revents & POLLIN) 
+            {
+            int bytes_received = read(client_socket, buffer, BUFFER_SIZE);
+            for (std::vector<ClientData>::iterator it = clientes.begin(); it != clientes.end(); ++it) //que cliente ha sido
+            {
+                if (it->getSocket() == client_socket) 
                 {
-                    std::cerr << "numero de eventos recibidos: " << pollfds[i].revents << std::endl;
-                    
-                    char buf[SIZE];
-                    int bufSize = read(pollfds[i].fd, buf, SIZE - 1);
-                    if (bufSize == -1)
+                    if (bytes_received <= 0) 
                     {
-                        // Error de lectura, cerrar el socket del cliente y actualizar el estado
-                        std::cerr << "Error de lectura, cerrar el socket del cliente y actualizar el estado" << std::endl;
-                        pollfds[i].fd = 0;
-                        pollfds[i].events = 0;
-                        pollfds[i].revents = 0;
-                        useClient--;
+                        std::cerr << "Cliente desconectado" << std::endl;
+                        clientes.erase(it); // Eliminar el elemento del vector
+                        close(client_socket);
+                        break;
                     }
-                    else
-                    {
-                        // Datos recibidos del cliente, imprimir
-                        buf[bufSize] = '\0';
-                        std::cerr << "client :" << buf << std::endl;
-                    }
+                    std::cout <<  it->getNickName() << " : " << buffer << std::endl;
+
+                    //std::cout << "Mensaje de " << FindSocket(clientes, client_socket).getName()  << " :" << buffer << std::endl;
+
+                    // procesar los comandos IRC
+                    // std::string response = "Recibido: ";
+                    // response += buffer;
+                    // write(client_socket, response.c_str(), response.length());
                 }
+            }
             }
         }
     }
+
+    // Cerrar el socket del servidor
+    close(server_socket);
+
+    return 0;
 }
 
 int Server::Start()
 {
-    int server_socket = create_socket();
+    if(Try_01() != 1)
+        return 1;
+    // int server_socket = create_socket();
 
-    int client_socket = WaitClient(server_socket);
+    // int client_socket = WaitClient(server_socket);
 
-    std::cerr << "server end" << std::endl;
+    // std::cerr << "server end" << std::endl;
 
-    close(client_socket);
-    close(server_socket);
+    // close(client_socket);
+    // close(server_socket);
 
     return 0;
 }

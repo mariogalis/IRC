@@ -1,5 +1,4 @@
 #include "Irc.hpp"
-#include "Server.hpp"
 
 std::string checkport(std::string port)
 {
@@ -23,6 +22,7 @@ std::string checkport(std::string port)
         exit(1);
     }
     return(port);
+    
 }
 
 std::string checkpass(std::string pass)

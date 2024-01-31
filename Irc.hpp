@@ -22,10 +22,8 @@
 # include <csignal>
 # include <fcntl.h>
 # include <termios.h>
-# include <poll.h>
-# include <sys/types.h>
-# include <sys/socket.h>
-# include <netinet/in.h>
+# include "ClientData.hpp"
+# include "Server.hpp"
 
 # define NOCOLOR "\033[0m"
 # define BLUE "\033[0;36m"
