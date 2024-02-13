@@ -1,6 +1,6 @@
 #include "Server.hpp"
 
-Server::Server(std::string const port, std::string const pass) : _port(port), _pass(pass)
+Server::Server(std::string const port, std::string const pass) : _port(port), _pass(pass), clientes()
 {
 
 }
@@ -22,6 +22,115 @@ Server &Server::operator=(const Server &other)
     return(*this);
 }
 
+
+int Server::firstCommand(const std::string& command, int client_socket) 
+{
+    std::istringstream iss(command);
+    std::string token;
+    std::vector<std::string> tokens;
+    std::vector<ClientData*>::iterator it;
+
+    it = find_ClientData_Socket(client_socket);
+    if(it == clientes.end())
+    {
+        std::cout << "Error en comandos iniciales: " << "no se encontró el socket del cliente" << std::endl;
+        return 1;
+    }
+    while (std::getline(iss, token, ' '))
+        tokens.push_back(token);
+    // Verificar si es un comando válido
+    if (!tokens.empty()) 
+    {
+        // El primer token es el comando
+        std::string ircCommand = tokens[0];
+
+        if(ircCommand == "PASS")
+        {
+            std::string tryPass = tokens[1];
+            std::string myPass = _pass;
+            tryPass.pop_back(); //elimino el ultimo caracter porque yo que se que hay al final que no funciona si no
+            std::cerr << "The client tried |"<< tryPass << "|" << std::endl;
+            std::cerr << "The password is |"<< myPass << "|" << std::endl;
+            if(myPass.compare(tryPass) != 0)
+            {
+                //write(client_socket, "Wrong password", 15); ESTO DEBERIA ENVIAR UN MENSAJE AL USUARIO PERO NO LO HACE XD
+                std::cerr << "The client tried to log in with an incorrect password" << std::endl;
+                return 1;
+                close(client_socket);
+            }
+            else
+            {
+                std::cerr << "password correct!" << std::endl;
+                return 0;
+            }
+        }
+        else if(ircCommand == "NICK")
+        {
+            std::string newNickName = tokens[1];
+            newNickName.pop_back(); //elimino el ultimo caracter porque yo que se que hay al final que no funciona si no
+            ((*it)->setNickName(newNickName));
+            std::cout << "Su nickname es: |" << (*it)->getNickName() << "|" << std::endl;
+            return 0;
+        }
+        else if(ircCommand == "USER")
+        {
+            std::string newLogin = tokens[1];
+            std::string newReal = tokens[4];
+            //newLogin.pop_back();
+            newReal.pop_back();
+            (*it)->setLoginName(newLogin);
+            std::cout << "Su LoginName es: |" << (*it)->getLoginName() << "|" << std::endl;
+            (*it)->setRealName(newReal);
+            std::cout << "Su RealName es: |" << (*it)->getRealName() << "|" << std::endl;
+            return 0;
+        }
+        else 
+        {
+            std::cout << "Error en comandos iniciales" << ircCommand << std::endl;
+            std::cerr << "Cliente desconectado" << std::endl;
+            return 1;
+        }
+    }
+    return 1;
+}
+
+void Server::processCommand(const std::string& command) 
+{
+    std::istringstream iss(command);
+    std::string token;
+    std::vector<std::string> tokens;
+
+    // Separar el comando en tokens
+    while (std::getline(iss, token, ' '))
+        tokens.push_back(token);
+
+    // Verificar si es un comando válido
+    if (!tokens.empty()) 
+    {
+        // El primer token es el comando
+        std::string ircCommand = tokens[0];
+
+        // Dependiendo del comando, realiza la acción correspondiente
+        if (ircCommand == "JOIN") 
+        {
+            // Procesar el comando JOIN
+            // tokens[1] contendría el nombre del canal al que el usuario quiere unirse
+            std::cout << "Usuario desea unirse al canal: " << tokens[1] << std::endl;
+        } 
+        else if (ircCommand == "PRIVMSG") 
+        {
+            // Procesar el comando PRIVMSG
+            // tokens[1] contendría el destinatario del mensaje
+            // tokens[2] contendría el mensaje en sí
+            std::cout << "Mensaje para " << tokens[1] << ": " << tokens[2] << std::endl;
+        }
+        else 
+        {
+            std::cout << "Comando no reconocido: " << ircCommand << std::endl;
+        }
+    }
+}
+
 bool repeatName(const std::vector<std::string>& vec, const std::string& nombre) 
 {
     return std::find(vec.begin(), vec.end(), nombre) != vec.end();
@@ -36,7 +145,8 @@ int Server::create_socket()
     std::istringstream ss(_port);
     uint16_t valorHost;
 
-    if (!(ss >> valorHost)) {
+    if (!(ss >> valorHost)) 
+    {
         std::cerr << "Error: No se pudo convertir la cadena a uint16_t." << std::endl;
         exit(0);
     }
@@ -84,23 +194,14 @@ std::string Separate(std::string input, int pos)
     return word;
 }
 
-bool Server::CheckPassword(std::string buffer)
+std::vector<ClientData*>::iterator	Server::find_ClientData_Socket(int fd)
 {
-    if(Separate(buffer, 0) != "PASS")
-        return false;
-    buffer = Separate(buffer, 1);
-    if(_pass == buffer)
-        return true;
-    else
-        return false;
-}
-
-bool Server::CheckNickName(char * buffer)
-{
-    if(Separate(buffer, 0) == "NICK")
-        return true;
-    else 
-        return false;
+    for (std::vector<ClientData*>::iterator it = clientes.begin(); it != clientes.end(); ++it)
+    {
+		if ((*it)->getSocket() == fd)
+			return (it);
+	}
+	return (clientes.end());
 }
 
 int Server::Try_01()
@@ -109,6 +210,8 @@ int Server::Try_01()
     struct sockaddr_in client_addr;
     socklen_t client_len = sizeof(client_addr);
     char buffer[BUFFER_SIZE];
+    std::string token;
+    std::vector<std::string> tokens;
     //int  event_client;
 
     server_socket =  create_socket();
@@ -122,7 +225,7 @@ int Server::Try_01()
 
         for (size_t i = 0; i < clientes.size(); ++i) 
         {
-            fds[i + 1].fd = clientes[i].getSocket();
+            fds[i + 1].fd = clientes[i]->getSocket();
             fds[i + 1].events = POLLIN;
         }
 
@@ -132,79 +235,59 @@ int Server::Try_01()
             std::cerr << "Error en poll()" << std::endl;
             break;
         }
-
-        if (fds[0].revents & POLLIN) {
+        memset(buffer, 0, BUFFER_SIZE);
+        if (fds[0].revents & POLLIN) 
+        {
             client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &client_len);
             if (client_socket < 0) 
             {
                 std::cerr << "Error al aceptar la conexión" << std::endl;
                 continue;
             }
+            if (ClientData::CreateClientData(client_socket, (struct sockaddr *)&client_addr, client_len, &clientes) != 0)
+				continue ;
             std::cout << "Cliente conectado" << std::endl;
-
-            // Recibir la contraseña
             memset(buffer, 0, BUFFER_SIZE);
             int bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
+            std::cout << buffer << std::endl;
             if (bytes_received <= 0) 
             {
                 std::cerr << "Error al recibir el nombre del cliente" << std::endl;
                 close(client_socket);
                 continue;
             }
-
-            if(CheckPassword(buffer) == false)
+            std::istringstream iss(buffer);
+            while (std::getline(iss, token, '\n'))
+                tokens.push_back(token);
+            for (size_t i = 0; i < tokens.size(); ++i)
             {
-                //write(client_socket, "Wrong password", 15); ESTO DEBERIA ENVIAR UN MENSAJE AL USUARIO
-                std::cerr << "The client tried to log in with an incorrect password" << std::endl;
-                close(client_socket);
-                continue;
+                if(firstCommand(tokens[i], client_socket) != 0)
+                {
+                    clientes.erase(find_ClientData_Socket(client_socket));
+                    close(client_socket);
+                    break;
+                }
             }
-            recv(client_socket, buffer, BUFFER_SIZE, 0);
-            if(CheckNickName(buffer) == false)
-            {
-                std::cerr << "The client tries to log with wrong nickname" << std::endl;
-                close(client_socket);
-                continue;
-            }
-            else
-            {
-                std::string nickname = Separate(buffer, 1);
-                std::cout << "<" << nickname << ">" << " acaba de entrar al servidor!" << std::endl;
-                recv(client_socket, buffer, BUFFER_SIZE, 0);
-                clientes.push_back(ClientData(client_socket, nickname));
-            }
-
-            // std::cerr << "client_socket :\n" << client_socket << std::endl;
-            // std::cerr << "buffer :\n" << buffer << std::endl;
-            // Agregar el cliente al vector de clientes
         }
 
         for (size_t i = 0; i < clientes.size(); ++i) 
         {
+            //std::cerr << "Cliente size = " << clientes.size() << std::endl;
             if (fds[i + 1].revents & POLLIN) 
             {
-            int bytes_received = read(client_socket, buffer, BUFFER_SIZE);
-            for (std::vector<ClientData>::iterator it = clientes.begin(); it != clientes.end(); ++it) //que cliente ha sido
-            {
-                if (it->getSocket() == client_socket) 
-                {
-                    if (bytes_received <= 0) 
+                    int bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
+                    if (find_ClientData_Socket(client_socket) != clientes.end())
                     {
-                        std::cerr << "Cliente desconectado" << std::endl;
-                        clientes.erase(it); // Eliminar el elemento del vector
-                        close(client_socket);
-                        break;
+                        if (bytes_received <= 0) 
+                        {
+                            std::cerr << "Cliente desconectado" << std::endl;
+                            clientes.erase(find_ClientData_Socket(client_socket)); // Eliminar el elemento del vector
+                            close(client_socket);
+                            break;
+                        }
+                        std::cout <<  (*(find_ClientData_Socket(client_socket)))->getNickName() << " : " << buffer << std::endl;
+                        processCommand(buffer);
                     }
-                    std::cout <<  it->getNickName() << " : " << buffer << std::endl;
-
-                    //std::cout << "Mensaje de " << FindSocket(clientes, client_socket).getName()  << " :" << buffer << std::endl;
-
-                    // procesar los comandos IRC
-                    // std::string response = "Recibido: ";
-                    // response += buffer;
-                    // write(client_socket, response.c_str(), response.length());
-                }
-            }
             }
         }
     }

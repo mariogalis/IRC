@@ -6,19 +6,30 @@
 class ClientData 
 {
 public:
-    ClientData(int socket, const std::string& NickName) : socket(socket), NickName(NickName) {}
-
-    int getSocket() const {
-        return socket;
-    }
-
-    std::string getNickName() const {
-        return NickName;
-    }
+    ClientData(int socket, const std::string& NickName);
+    static int	CreateClientData(int fd, struct sockaddr *addr, socklen_t addrlen, std::vector<ClientData *> *clientes);
+    void setNickName(std::string newNickName);
+    void setLoginName(std::string newLoginName);
+    void setRealName(std::string newRealName);
+    int getSocket();
+    std::string getNickName();
+    std::string getLoginName();
+    std::string getRealName();
+    void setHost(std::string host);
+    void setService(std::string service);
 
 private:
-    int socket;
-    std::string NickName;
+    ClientData();
+    ~ClientData();
+    ClientData(int socket);
+    ClientData(const ClientData &other);
+    ClientData	&operator=(const ClientData &other);
+    int _socket;
+    std::string _NickName;
+    std::string _LoginName;
+    std::string _RealName;
+    std::string	_host;
+    std::string	_service;
 };
 
 #endif
