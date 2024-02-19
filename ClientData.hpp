@@ -8,6 +8,7 @@ class ClientData
 public:
     ClientData(int socket, const std::string& NickName);
     static int	CreateClientData(int fd, struct sockaddr *addr, socklen_t addrlen, std::vector<ClientData *> *clientes);
+    static std::vector<ClientData*>::iterator find_ClientData_Socket(int fd, std::vector<ClientData *> *clientes);
     void setNickName(std::string newNickName);
     void setLoginName(std::string newLoginName);
     void setRealName(std::string newRealName);

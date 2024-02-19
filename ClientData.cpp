@@ -30,6 +30,17 @@ void	ClientData::setHost(std::string host) { _host = host; }
 
 void	ClientData::setService(std::string service) { _service = service; }
 
+std::vector<ClientData*>::iterator	ClientData::find_ClientData_Socket(int fd, std::vector<ClientData *> *clientes)
+{
+    for (std::vector<ClientData*>::iterator it = clientes->begin(); it != clientes->end(); ++it)
+    {
+		if ((*it)->getSocket() == fd)
+			return (it);
+	}
+	return (clientes->end());
+}
+
+
 int	ClientData::CreateClientData(int fd, struct sockaddr * addr, socklen_t addrlen, std::vector<ClientData *> *clientes)
 {
 	ClientData		*temp = new ClientData(fd);
@@ -37,6 +48,11 @@ int	ClientData::CreateClientData(int fd, struct sockaddr * addr, socklen_t addrl
 	char		service[NI_MAXSERV];
 	std::string	hoststring;
 
+	if(find_ClientData_Socket(fd, clientes) != clientes->end())
+	{
+		std::cerr << RED << "Cliente repetido" << NOCOLOR << std::endl;
+		return(1);
+	}
 	if (getnameinfo(addr, addrlen, host, sizeof(host), service, sizeof(service), NI_NUMERICHOST) != 0)
 	{
 		std::cerr << RED << "Error. Couldn't retrieve hostname." << NOCOLOR << std::endl;
