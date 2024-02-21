@@ -1,20 +1,11 @@
 #include "ClientData.hpp"
 
-ClientData::ClientData(int socket, const std::string& NickName) : _socket(socket), _NickName(NickName)
-{
-
-}
-ClientData::ClientData(int socket) : _socket(socket)
-{
-
-}
-
-ClientData::ClientData(const ClientData &other)
-{
-    *this = other;
-}
-
+ClientData::ClientData(){}
+ClientData::ClientData(int socket) : _socket(socket){}
+ClientData::ClientData(const ClientData &other){*this = other;}
 ClientData::~ClientData(){}
+void	ClientData::setHost(std::string host) { _host = host; }
+void	ClientData::setService(std::string service) { _service = service; }
 
 ClientData &ClientData::operator=(const ClientData &other)
 {
@@ -26,33 +17,13 @@ ClientData &ClientData::operator=(const ClientData &other)
     return(*this);
 }
 
-void	ClientData::setHost(std::string host) { _host = host; }
-
-void	ClientData::setService(std::string service) { _service = service; }
-
-std::vector<ClientData*>::iterator	ClientData::find_ClientData_Socket(int fd, std::vector<ClientData *> *clientes)
-{
-    for (std::vector<ClientData*>::iterator it = clientes->begin(); it != clientes->end(); ++it)
-    {
-		if ((*it)->getSocket() == fd)
-			return (it);
-	}
-	return (clientes->end());
-}
-
-
-int	ClientData::CreateClientData(int fd, struct sockaddr * addr, socklen_t addrlen, std::vector<ClientData *> *clientes)
+int	ClientData::CreateClientData(int fd, struct sockaddr * addr, socklen_t addrlen)
 {
 	ClientData		*temp = new ClientData(fd);
-	char		host[NI_MAXHOST];
-	char		service[NI_MAXSERV];
-	std::string	hoststring;
+	char			host[NI_MAXHOST];
+	char			service[NI_MAXSERV];
+	std::string		hoststring;
 
-	if(find_ClientData_Socket(fd, clientes) != clientes->end())
-	{
-		std::cerr << RED << "Cliente repetido" << NOCOLOR << std::endl;
-		return(1);
-	}
 	if (getnameinfo(addr, addrlen, host, sizeof(host), service, sizeof(service), NI_NUMERICHOST) != 0)
 	{
 		std::cerr << RED << "Error. Couldn't retrieve hostname." << NOCOLOR << std::endl;
@@ -65,19 +36,13 @@ int	ClientData::CreateClientData(int fd, struct sockaddr * addr, socklen_t addrl
 			hoststring.erase(HOSTLEN, std::string::npos);
 	temp->setHost(hoststring);
 	temp->setService(std::string (service));
-	clientes->push_back(temp);
+
 	return (0);
 }
 
-void ClientData::setNickName(std::string newNickName)
-{
-	this->_NickName = newNickName;
-}
+void ClientData::setNickName(std::string newNickName){this->_NickName = newNickName;}
 
-void ClientData::setLoginName(std::string newLoginName)
-{
-	this->_LoginName = newLoginName;
-}
+void ClientData::setLoginName(std::string newLoginName){this->_LoginName = newLoginName;}
 
 void ClientData::setRealName(std::string newRealName)
 {

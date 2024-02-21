@@ -23,19 +23,13 @@ Server &Server::operator=(const Server &other)
 }
 
 
-int Server::firstCommand(const std::string& command, int client_socket) 
+int Server::firstCommand(const std::string& command, ClientData *client) 
 {
     std::istringstream iss(command);
     std::string token;
     std::vector<std::string> tokens;
     std::vector<ClientData*>::iterator it;
 
-    it = find_ClientData_Socket(client_socket);
-    if(it == clientes.end())
-    {
-        std::cout << "Error en comandos iniciales: " << "no se encontró el socket del cliente" << std::endl;
-        return 1;
-    }
     while (std::getline(iss, token, ' '))
         tokens.push_back(token);
     // Verificar si es un comando válido
@@ -49,14 +43,12 @@ int Server::firstCommand(const std::string& command, int client_socket)
             std::string tryPass = tokens[1];
             std::string myPass = _pass;
             tryPass.pop_back(); //elimino el ultimo caracter porque yo que se que hay al final que no funciona si no
-            std::cerr << "The client tried |"<< tryPass << "|" << std::endl;
-            std::cerr << "The password is |"<< myPass << "|" << std::endl;
+
             if(myPass.compare(tryPass) != 0)
             {
                 //write(client_socket, "Wrong password", 15); ESTO DEBERIA ENVIAR UN MENSAJE AL USUARIO PERO NO LO HACE XD
                 std::cerr << "The client tried to log in with an incorrect password" << std::endl;
                 return 1;
-                close(client_socket);
             }
             else
             {
@@ -68,20 +60,17 @@ int Server::firstCommand(const std::string& command, int client_socket)
         {
             std::string newNickName = tokens[1];
             newNickName.pop_back(); //elimino el ultimo caracter porque yo que se que hay al final que no funciona si no
-            ((*it)->setNickName(newNickName));
-            std::cout << "Su nickname es: |" << (*it)->getNickName() << "|" << std::endl;
+            client->setNickName(newNickName);
             return 0;
         }
         else if(ircCommand == "USER")
         {
             std::string newLogin = tokens[1];
             std::string newReal = tokens[4];
-            //newLogin.pop_back();
+            newLogin.pop_back();
             newReal.pop_back();
-            (*it)->setLoginName(newLogin);
-            std::cout << "Su LoginName es: |" << (*it)->getLoginName() << "|" << std::endl;
-            (*it)->setRealName(newReal);
-            std::cout << "Su RealName es: |" << (*it)->getRealName() << "|" << std::endl;
+            client->setLoginName(newLogin);
+            client->setRealName(newReal);
             return 0;
         }
         else 
@@ -191,7 +180,7 @@ std::vector<ClientData*>::iterator	Server::find_ClientData_Socket(int fd)
 }
 
 
-int Server::Try_01()
+int Server::Start()
 {
     int server_socket, client_socket;
     struct sockaddr_storage client_addr;
@@ -202,44 +191,70 @@ int Server::Try_01()
     _sockets.push_back(pollfd());
     _sockets[0].fd = server_socket;
     _sockets[0].events = POLLIN;
+    std::string token;
+    std::vector<std::string> tokens;
+    std::vector<ClientData> clients_vec;
     std::cout << "Servidor IRC escuchando en el puerto " << _port << std::endl;
 
     while (true) 
     {
         if(poll(&_sockets[0], _sockets.size(), 1000) == -1)
             std::cerr << RED << "Error poll" << NOCOLOR << std::endl;
-        for(size_t i = 0; i < _sockets.size(); i ++)
+        for(size_t socket_num = 0; socket_num < _sockets.size(); socket_num++)
         {
-            if(_sockets[i].revents & POLLIN)
+            if(_sockets[socket_num].revents & POLLIN)
             {
-                if(_sockets[i].fd == server_socket) //nuevo cliente
+                if(_sockets[socket_num].fd == server_socket) //nuevo cliente
                 {
                     client_len = sizeof(client_addr);
                     client_socket = accept(server_socket,(struct sockaddr *) &client_addr, &client_len);
                     if(client_socket == -1)
-                    {
                          std::cerr << RED << "Error client socket" << NOCOLOR << std::endl;
-                    }
                     std::cout << GREEN << "New user connected :)" << NOCOLOR << std::endl;
                     _sockets.push_back(pollfd());
-                    _sockets.back().fd = client_socket;
-                    _sockets.back(). events = POLLIN;
+					_sockets.back().fd = client_socket;
+					_sockets.back().events = POLLIN;
+                    ClientData client(client_socket);
+                    for(int i = 0; i < 3; i++)
+                    {
+                        int bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
+                        buffer[bytes_received] = '\0';
+                        if (bytes_received <= 0) 
+                        {
+                            std::cerr << "Error al recibir el nombre del cliente" << std::endl;
+                            _sockets.erase(_sockets.begin() + i);
+                            close(client_socket);
+                            continue;
+                        }
+                        std::istringstream iss(buffer);
+                        while (std::getline(iss, token, '\n'))
+                            tokens.push_back(token);
+                        for (size_t j = 0; j < tokens.size(); ++j)
+                        {
+                            if(firstCommand(tokens[j], &client) != 0)
+                            {
+                                _sockets.erase(_sockets.end() - 1);
+                                close(client_socket);
+                                std::cerr << "CERRADO!" << std::endl;
+                                break;
+                            }
+                        }
+                        tokens.clear();
+                    }
+                    std::cout << "Su nickname es: |" << client.getNickName() << "|" << std::endl;
+                    std::cout << "Su real es: |" << client.getRealName() << "|" << std::endl;
+                    std::cout << "Su login es: |" << client.getLoginName() << "|" << std::endl;
+                    clients_vec.push_back(client);
+
                 }
                 else
                 {
-                    bytes = recv(_sockets[i].fd , buffer, BUFFER_SIZE, 0);
+                    bytes = recv(_sockets[socket_num].fd , buffer, BUFFER_SIZE, 0);
                     if(bytes <= 0)
                     {
                         std::cerr << RED << "Client disconnected" << NOCOLOR << std::endl;
-                        for (std::vector<pollfd>::iterator it = _sockets.begin(); it != _sockets.end(); it++)
-                        {
-                            if (client_socket == (*it).fd)
-                            {
-                                close((*it).fd);
-                                _sockets.erase(it);
-                                break ;
-                            }
-                        }
+                        close(_sockets[socket_num].fd);
+                        _sockets.erase(_sockets.begin() + socket_num);
                         break;
                     }
                     else
@@ -258,20 +273,4 @@ int Server::Try_01()
     return 0;
 }
 
-
-int Server::Start()
-{
-    if(Try_01() != 1)
-        return 1;
-    // int server_socket = create_socket();
-
-    // int client_socket = WaitClient(server_socket);
-
-    // std::cerr << "server end" << std::endl;
-
-    // close(client_socket);
-    // close(server_socket);
-
-    return 0;
-}
 
