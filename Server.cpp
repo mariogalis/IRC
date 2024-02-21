@@ -67,7 +67,6 @@ int Server::firstCommand(const std::string& command, ClientData *client)
         {
             std::string newLogin = tokens[1];
             std::string newReal = tokens[4];
-            newLogin.pop_back();
             newReal.pop_back();
             client->setLoginName(newLogin);
             client->setRealName(newReal);
@@ -210,7 +209,6 @@ int Server::Start()
                     client_socket = accept(server_socket,(struct sockaddr *) &client_addr, &client_len);
                     if(client_socket == -1)
                          std::cerr << RED << "Error client socket" << NOCOLOR << std::endl;
-                    std::cout << GREEN << "New user connected :)" << NOCOLOR << std::endl;
                     _sockets.push_back(pollfd());
 					_sockets.back().fd = client_socket;
 					_sockets.back().events = POLLIN;
@@ -241,11 +239,8 @@ int Server::Start()
                         }
                         tokens.clear();
                     }
-                    std::cout << "Su nickname es: |" << client.getNickName() << "|" << std::endl;
-                    std::cout << "Su real es: |" << client.getRealName() << "|" << std::endl;
-                    std::cout << "Su login es: |" << client.getLoginName() << "|" << std::endl;
                     clients_vec.push_back(client);
-
+                    std::cout << GREEN << client.getNickName() << " log in!" << NOCOLOR << std::endl;
                 }
                 else
                 {
