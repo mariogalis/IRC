@@ -136,53 +136,6 @@ bool repeatName(const std::vector<std::string>& vec, const std::string& nombre)
     return std::find(vec.begin(), vec.end(), nombre) != vec.end();
 }
 
-// static int	get_listener(int const queue_size, char const *port)
-// {
-// 	int				listenfd;
-// 	int				yes = 1;
-// 	struct addrinfo	hints;
-// 	struct addrinfo	*info;
-// 	struct addrinfo	*temp;
-
-// 	memset(&hints, 0, sizeof(hints));
-// 	hints.ai_family = AF_UNSPEC;
-// 	hints.ai_socktype = SOCK_STREAM;
-// 	hints.ai_flags = AI_PASSIVE;
-// 	if (getaddrinfo(NULL, port, &hints, &info) != 0)
-// 	{
-// 		std::cerr << RED << "Error. Unable to get network address." << NOCOLOR << std::endl;
-// 		freeaddrinfo(info);
-// 		exit (1);
-// 	}
-// 	for (temp = info; temp != NULL; temp = temp->ai_next)
-// 	{
-// 		listenfd = socket(temp->ai_family, temp->ai_socktype, temp->ai_protocol);
-// 		if (listenfd < 0)
-// 			continue ;
-// 		setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-// 		if (bind(listenfd, temp->ai_addr, temp->ai_addrlen) != 0)
-// 		{
-// 			close(listenfd);
-// 			continue ;
-// 		}
-// 		break ;
-// 	}
-// 	freeaddrinfo(info);
-// 	if (!temp)
-// 	{
-// 		std::cerr << RED << "Error. Unable to bind socket." << NOCOLOR << std::endl;
-// 		close(listenfd);
-// 		exit (1);
-// 	}
-// 	if (listen(listenfd, queue_size) != 0)
-// 	{
-// 		std::cerr << RED << "Error. Unable to setup socket." << NOCOLOR << std::endl;
-// 		close(listenfd);
-// 		exit (1);
-// 	}
-// 	return (listenfd);
-// }
-
 int Server::create_socket()
 {
     // Crear un socket del lado del servidor
@@ -241,117 +194,70 @@ std::vector<ClientData*>::iterator	Server::find_ClientData_Socket(int fd)
 int Server::Try_01()
 {
     int server_socket, client_socket;
-    struct sockaddr_in client_addr;
-    socklen_t client_len = sizeof(client_addr);
+    struct sockaddr_storage client_addr;
+    socklen_t client_len;
     char buffer[BUFFER_SIZE];
-    std::string token;
-    std::vector<std::string> tokens;
-    //int  event_client;
-    //memset(buffer, 0, BUFFER_SIZE);
     server_socket = create_socket();
-    //server_socket = get_listener(10, _port.c_str());
+    int bytes;
     _sockets.push_back(pollfd());
     _sockets[0].fd = server_socket;
     _sockets[0].events = POLLIN;
     std::cout << "Servidor IRC escuchando en el puerto " << _port << std::endl;
 
-    for (size_t i = 0; i < clientes.size(); ++i) 
-    {
-        _sockets[i + 1].fd = clientes[i]->getSocket();
-        _sockets[i + 1].events = POLLIN;
-    }
     while (true) 
     {
-
-        memset(buffer, 0, BUFFER_SIZE);
-        int num_ready = poll(&_sockets[0], _sockets.size(), -1);
-        if (num_ready < 0) 
+        if(poll(&_sockets[0], _sockets.size(), 1000) == -1)
+            std::cerr << RED << "Error poll" << NOCOLOR << std::endl;
+        for(size_t i = 0; i < _sockets.size(); i ++)
         {
-            std::cerr << "Error en poll()" << std::endl;
-            break;
-        }
-        for (size_t i = 0; i < _sockets.size(); i++)
-        {
-            std::cerr << "bucle" << std::endl;
-            if (_sockets[i].revents & POLLIN) 
+            if(_sockets[i].revents & POLLIN)
             {
-                std::cerr << "aqui01" << std::endl;
-                if (_sockets[i].fd == server_socket)
+                if(_sockets[i].fd == server_socket) //nuevo cliente
                 {
-                    client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &client_len);
-                    if(find_ClientData_Socket(client_socket) != clientes.end())
+                    client_len = sizeof(client_addr);
+                    client_socket = accept(server_socket,(struct sockaddr *) &client_addr, &client_len);
+                    if(client_socket == -1)
                     {
-                        std::cerr << "cliente repetido" << client_socket << std::endl;
+                         std::cerr << RED << "Error client socket" << NOCOLOR << std::endl;
                     }
-                    std::cerr << "client socket " << client_socket << std::endl;
-                    if (client_socket < 0) 
-                    {
-                        std::cerr << "Error al aceptar la conexión" << std::endl;
-                        continue;
-                    }
-                    if (ClientData::CreateClientData(client_socket, (struct sockaddr *)&client_addr, client_len, &clientes) != 0)
-                        continue ;
-                    std::cout << "Cliente conectado" << std::endl;
-                    
-                    int bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
+                    std::cout << GREEN << "New user connected :)" << NOCOLOR << std::endl;
                     _sockets.push_back(pollfd());
-					_sockets.back().fd = client_socket;
-					_sockets.back().events = POLLIN;
-                    std::cout << buffer << std::endl;
-                    if (bytes_received <= 0) 
-                    {
-                        std::cerr << "Error al recibir el nombre del cliente" << std::endl;
-                        close(client_socket);
-                        continue;
-                    }
-                    std::istringstream iss(buffer);
-                    while (std::getline(iss, token, '\n'))
-                        tokens.push_back(token);
-                    for (size_t i = 0; i < tokens.size(); ++i)
-                    {
-                        if(firstCommand(tokens[i], client_socket) != 0)
-                        {
-                            clientes.erase(find_ClientData_Socket(client_socket));
-                            close(client_socket);
-                            std::cerr << "CERRADO!" << std::endl;
-                            break;
-                        }
-                    }
+                    _sockets.back().fd = client_socket;
+                    _sockets.back(). events = POLLIN;
                 }
                 else
                 {
-                    std::cerr << "aqui02" << std::endl;
-                    for (size_t i = 0; i < clientes.size(); ++i) 
+                    bytes = recv(_sockets[i].fd , buffer, BUFFER_SIZE, 0);
+                    if(bytes <= 0)
                     {
-                        std::cerr << "Cliente size = " << clientes.size() << std::endl;
-                        if (_sockets[i + 1].revents & POLLIN) 
+                        std::cerr << RED << "Client disconnected" << NOCOLOR << std::endl;
+                        for (std::vector<pollfd>::iterator it = _sockets.begin(); it != _sockets.end(); it++)
                         {
-                                int bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
-                                if (find_ClientData_Socket(client_socket) != clientes.end())
-                                {
-                                    if (bytes_received <= 0) 
-                                    {
-                                        std::cerr << "Cliente desconectado" << std::endl;
-                                        clientes.erase(find_ClientData_Socket(client_socket)); // Eliminar el elemento del vector
-                                        close(client_socket);
-                                        break;
-                                    }
-                                    std::cout <<  (*(find_ClientData_Socket(client_socket)))->getNickName() << " : " << buffer << std::endl;
-                                    processCommand(buffer);
-                                }
+                            if (client_socket == (*it).fd)
+                            {
+                                close((*it).fd);
+                                _sockets.erase(it);
+                                break ;
+                            }
                         }
+                        break;
+                    }
+                    else
+                    {
+                        buffer[bytes] = '\0';
+                        std::cout << "user : " << buffer << std::endl;
+                        processCommand(buffer);
                     }
                 }
-
             }
         }
     }
-
     // Cerrar el socket del servidor
     close(server_socket);
 
     return 0;
 }
+
 
 int Server::Start()
 {
