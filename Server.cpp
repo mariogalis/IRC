@@ -1,6 +1,6 @@
 #include "Server.hpp"
 
-Server::Server(std::string const port, std::string const pass) : _port(port), _pass(pass), clientes()
+Server::Server(std::string const port, std::string const pass) : _port(port), _pass(pass)
 {
 
 }
@@ -88,28 +88,19 @@ void Server::processCommand(const std::string& command)
     std::string token;
     std::vector<std::string> tokens;
 
-    // Separar el comando en tokens
     while (std::getline(iss, token, ' '))
         tokens.push_back(token);
 
-    // Verificar si es un comando válido
     if (!tokens.empty()) 
     {
-        // El primer token es el comando
         std::string ircCommand = tokens[0];
 
-        // Dependiendo del comando, realiza la acción correspondiente
         if (ircCommand == "JOIN") 
         {
-            // Procesar el comando JOIN
-            // tokens[1] contendría el nombre del canal al que el usuario quiere unirse
             std::cout << "Usuario desea unirse al canal: " << tokens[1] << std::endl;
         } 
         else if (ircCommand == "PRIVMSG") 
         {
-            // Procesar el comando PRIVMSG
-            // tokens[1] contendría el destinatario del mensaje
-            // tokens[2] contendría el mensaje en sí
             std::cout << "Mensaje para " << tokens[1] << ": " << tokens[2] << std::endl;
         }
         else 
@@ -167,14 +158,14 @@ int Server::create_socket()
 }
 
 
-std::vector<ClientData*>::iterator	Server::find_ClientData_Socket(int fd)
+std::vector<ClientData>::iterator	Server::find_ClientData_Socket(int fd)
 {
-    for (std::vector<ClientData*>::iterator it = clientes.begin(); it != clientes.end(); ++it)
+    for (std::vector<ClientData>::iterator it = clients_vec.begin(); it != clients_vec.end(); ++it)
     {
-		if ((*it)->getSocket() == fd)
+		if ((it)->getSocket() == fd)
 			return (it);
 	}
-	return (clientes.end());
+	return (clients_vec.end());
 
 }
 
@@ -192,7 +183,6 @@ int Server::Start()
     _sockets[0].events = POLLIN;
     std::string token;
     std::vector<std::string> tokens;
-    std::vector<ClientData> clients_vec;
     std::cout << "Servidor IRC escuchando en el puerto " << _port << std::endl;
 
     while (true) 
@@ -209,6 +199,7 @@ int Server::Start()
                     client_socket = accept(server_socket,(struct sockaddr *) &client_addr, &client_len);
                     if(client_socket == -1)
                          std::cerr << RED << "Error client socket" << NOCOLOR << std::endl;
+                    std::cout << GREEN << "New user connected :)" << NOCOLOR << std::endl;
                     _sockets.push_back(pollfd());
 					_sockets.back().fd = client_socket;
 					_sockets.back().events = POLLIN;
@@ -239,23 +230,32 @@ int Server::Start()
                         }
                         tokens.clear();
                     }
+                    std::cout << "Su nickname es: |" << client.getNickName() << "|" << std::endl;
+                    std::cout << "Su real es: |" << client.getRealName() << "|" << std::endl;
+                    std::cout << "Su login es: |" << client.getLoginName() << "|" << std::endl;
                     clients_vec.push_back(client);
-                    std::cout << GREEN << client.getNickName() << " log in!" << NOCOLOR << std::endl;
+
                 }
                 else
                 {
                     bytes = recv(_sockets[socket_num].fd , buffer, BUFFER_SIZE, 0);
-                    if(bytes <= 0)
+                    std::vector<ClientData>::iterator it_client = find_ClientData_Socket(_sockets[socket_num].fd);
+                    if(it_client == clients_vec.end())
+                    {
+                        std::cerr << "ERROR not in socket list" << std::endl;
+                    }
+                    else if(bytes <= 0)
                     {
                         std::cerr << RED << "Client disconnected" << NOCOLOR << std::endl;
                         close(_sockets[socket_num].fd);
                         _sockets.erase(_sockets.begin() + socket_num);
+                        clients_vec.erase(it_client);
                         break;
                     }
                     else
                     {
                         buffer[bytes] = '\0';
-                        std::cout << "user : " << buffer << std::endl;
+                        std::cout << it_client->getNickName() << " : " << buffer << std::endl;
                         processCommand(buffer);
                     }
                 }
