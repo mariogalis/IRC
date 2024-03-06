@@ -22,11 +22,14 @@ public:
 
     //GETTERS
     int getSocket();
+    int getFd();
     std::string getNickName();
     std::string getLoginName();
     std::string getRealName();
+    std::string getHostname();
 
 private:
+    bool        _super;
     int         _socket;
     std::string _NickName;
     std::string _LoginName;

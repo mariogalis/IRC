@@ -22,8 +22,15 @@
 # include <csignal>
 # include <fcntl.h>
 # include <termios.h>
+# include <iostream>
+# include <cstring>
+
 # include "ClientData.hpp"
+# include "ChannelData.hpp"
 # include "Server.hpp"
+
+# include "Codes.hpp"
+
 
 # define NOCOLOR "\033[0m"
 # define BLUE "\033[0;36m"

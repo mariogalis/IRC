@@ -1,12 +1,20 @@
 #include "ClientData.hpp"
 
 ClientData::ClientData(){}
-ClientData::ClientData(int socket) : _socket(socket){}
+ClientData::ClientData(int socket) : _socket(socket){_super = false;}
 ClientData::ClientData(const ClientData &other){*this = other;}
 ClientData::~ClientData(){}
-void	ClientData::setHost(std::string host) { _host = host; }
-void	ClientData::setService(std::string service) { _service = service; }
-
+std::string ClientData::getNickName(){return _NickName;}
+std::string ClientData::getLoginName(){return _LoginName;}
+std::string ClientData::getRealName(){return _RealName;}
+std::string ClientData::getHostname(){return _host;}
+void		ClientData::setHost(std::string host) { _host = host; }
+void		ClientData::setService(std::string service) { _service = service; }
+void 		ClientData::setNickName(std::string newNickName){this->_NickName = newNickName;}
+void 		ClientData::setLoginName(std::string newLoginName){this->_LoginName = newLoginName;}
+void 		ClientData::setRealName(std::string newRealName){this->_RealName = newRealName;}
+int 		ClientData::getSocket(){return _socket;}
+int 		ClientData::getFd(){return _socket;}
 ClientData &ClientData::operator=(const ClientData &other)
 {
     if (this != &other)
@@ -38,33 +46,4 @@ int	ClientData::CreateClientData(int fd, struct sockaddr * addr, socklen_t addrl
 	temp->setService(std::string (service));
 
 	return (0);
-}
-
-void ClientData::setNickName(std::string newNickName){this->_NickName = newNickName;}
-
-void ClientData::setLoginName(std::string newLoginName){this->_LoginName = newLoginName;}
-
-void ClientData::setRealName(std::string newRealName)
-{
-	this->_RealName = newRealName;
-}
-
-int ClientData::getSocket()
-{
-	return _socket;
-}
-
-std::string ClientData::getNickName()
-{
-	return _NickName;
-}
-
-std::string ClientData::getLoginName()
-{
-	return _LoginName;
-}
-
-std::string ClientData::getRealName()
-{
-	return _RealName;
 }
