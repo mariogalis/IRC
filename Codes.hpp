@@ -5,6 +5,7 @@
 # define	RPL_WELCOME					"001"
 
 // -- COMMAND RESPONSES					200 - 399
+# define    RPL_TRACENEWTYPE            "208"
 # define	RPL_USERHOST				"302"
 # define	RPL_TOPIC					"332"
 # define	RPL_NAMREPLY				"353"

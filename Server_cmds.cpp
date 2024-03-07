@@ -56,7 +56,7 @@ int Server::firstCommand(const std::string& command, ClientData *client)
     return 1;
 }
 
-void Server::processCommand(const std::string& command, ClientData &client) 
+int Server::processCommand(const std::string& command, ClientData &client, size_t socket_num, std::vector<ClientData>::iterator it_client) 
 {
     std::istringstream iss(command);
     std::string token;
@@ -83,19 +83,28 @@ void Server::processCommand(const std::string& command, ClientData &client)
             std::string my_pass = _supass;
             su_pass.pop_back();
             su_pass.pop_back();
-            std::cout << "su_pass =" << "|" << su_pass << "|" << su_pass.length() << std::endl;
-            std::cout << "my_pass =" << "|" << my_pass << "|" << my_pass.length()<< std::endl;
-            //std::cout << "su_pass =" << su_pass << "su_pass length = " << su_pass.length() ;
-
             if(my_pass.compare(su_pass) != 0)
-            {
-                std::cout << "compare = " << my_pass.compare(su_pass)<< std::endl;
                 sendToUser(&client, makeUserMsg(&client, ERR_NOTREGISTERED, "Contraseña del superusuario erronea"));
+            else
+            {
+                it_client->setSuper(true);
+                sendToUser(&client, makeUserMsg(&client, RPL_TRACENEWTYPE, "SUPERUSUARIO"));
+                std::cout << BLUE << client.getNickName() << " ahora es superusuario" << NOCOLOR << std::endl;
             }
+        }
+        else if(ircCommand == "QUIT")
+        {
+            deleteClient(socket_num, it_client);
+        }
+        else if(ircCommand == "ENDSERVER")
+        {
+            CloseServer();
+            return (1);
         }
         else 
         {
             std::cout << "Comando no reconocido: " << ircCommand << std::endl;
         }
     }
+    return (0);
 }

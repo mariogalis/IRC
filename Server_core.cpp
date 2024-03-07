@@ -1,6 +1,6 @@
 #include "Server.hpp"
 
-Server::Server(std::string const port, std::string const pass) : _port(port), _pass(pass){_supass = "marioyalbertohola";}
+Server::Server(std::string const port, std::string const pass) : _port(port), _pass(pass){_supass = "supermario";}
 Server::Server(const Server &other){*this = other;}
 Server::~Server(){}
 Server &Server::operator=(const Server &other)
@@ -72,23 +72,33 @@ int Server::ReceiveDataClient(size_t socket_num, char *buffer)
     }
     else if(bytes <= 0)
     {
-        std::cerr << RED << "Client disconnected" << NOCOLOR << std::endl;
-        close(_sockets[socket_num].fd);
-        _sockets.erase(_sockets.begin() + socket_num);
-        clients_vec.erase(it_client);
+        deleteClient(socket_num, it_client);
         return(1);
     }
     else
     {
         buffer[bytes] = '\0';
         std::cout << it_client->getNickName() << " : " << buffer << std::endl;
-        processCommand(buffer, *it_client);
+        if(processCommand(buffer, *it_client, socket_num, it_client) != 0)
+            return(2);
         return(0);
     }
 }
 
+void Server::CloseServer()
+{
+    for(size_t socket_num = 0; socket_num < _sockets.size(); socket_num++)
+        close(_sockets[socket_num].fd);
+    _sockets.clear();
+    for(size_t client_num = 0; client_num < clients_vec.size(); client_num++)
+        clients_vec[client_num].~ClientData();
+    clients_vec.clear();
+    std::cout << RED << "||Servidor cerrado||" << NOCOLOR << std::endl;
+}
+
 int Server::Start()
 {
+    std::string input;
     int server_socket;
     struct sockaddr_storage client_addr;
     char buffer[BUFFER_SIZE];
@@ -97,8 +107,14 @@ int Server::Start()
     _sockets[0].fd = server_socket;
     _sockets[0].events = POLLIN;
     std::cout << "Servidor IRC escuchando en el puerto " << _port << std::endl;
-    while (true) 
+    while (1) 
     {
+        // std::getline(std::cin, input);
+        // if(input == "exit")
+        // {
+        //     CloseServer();
+        //     break;
+        // }
         if(poll(&_sockets[0], _sockets.size(), 1000) == -1)
             std::cerr << RED << "Error poll" << NOCOLOR << std::endl;
         for(size_t socket_num = 0; socket_num < _sockets.size(); socket_num++)
@@ -112,8 +128,11 @@ int Server::Start()
                 }
                 else
                 {
-                    if(ReceiveDataClient(socket_num, buffer) != 0)
+                    int i = ReceiveDataClient(socket_num, buffer);
+                    if(i == 1)
                         break;
+                    else if(i == 2)
+                        return(0);
                 }
             }
         }

@@ -19,6 +19,7 @@ public:
     void setRealName(std::string newRealName);
     void setHost(std::string host);
     void setService(std::string service);
+    void setSuper(bool i);
 
     //GETTERS
     int getSocket();
@@ -27,6 +28,7 @@ public:
     std::string getLoginName();
     std::string getRealName();
     std::string getHostname();
+    bool        getSuper();
 
 private:
     bool        _super;

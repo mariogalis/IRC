@@ -19,13 +19,15 @@ class Server
         int create_serversocket();
         bool CheckPassword(std::string buffer);
         bool CheckNickName(char* buffer);
-        void processCommand(const std::string& command, ClientData &client);
+        int processCommand(const std::string& command, ClientData &client, size_t socket_num, std::vector<ClientData>::iterator it_client);
         int firstCommand(const std::string& command, ClientData *client);
         std::vector<ClientData>::iterator find_ClientData_Socket(int fd);
         void sendToUser(ClientData *targetUser, std::string message);
         std::string makeUserMsg(ClientData *user, std::string code, std::string input);
         int CreateNewUser(struct sockaddr_storage client_addr, int server_socket, char *buffer);
         int ReceiveDataClient(size_t socket_num, char *buffer);
+        void deleteClient(size_t socket_num, std::vector<ClientData>::iterator it_client);
+        void CloseServer();
     private:
         Server(const Server &other);
         Server	&operator=(const Server &other);
@@ -34,6 +36,7 @@ class Server
         std::string _supass;
         std::vector<ClientData> clients_vec;
         std::vector<pollfd>		_sockets;
+        bool _ServerStatus;
         //std::vector<ChannelData> channel_vec;
 
 };

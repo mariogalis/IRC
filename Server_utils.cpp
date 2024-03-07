@@ -55,7 +55,7 @@ int Server::create_serversocket()
         addr.sin_port = htons(valorHost);
 
         addr.sin_addr.s_addr = inet_addr(getIP());
-
+        std::cout << BLUE << "IP local: " << getIP() << NOCOLOR << std::endl;
         int bindResult = bind(server_socket, (struct sockaddr *)&addr, sizeof(addr));
         if (bindResult == -1)
             perror("bindResult");
@@ -80,4 +80,14 @@ void	Server::sendToUser(ClientData *targetUser, std::string message)
 	if (send(targetUser->getFd(), message.c_str(), message.size(), 0) < 0)
 		throw std::invalid_argument(" > Error at sendToUser() ");
 }
+
+void	Server::deleteClient(size_t socket_num, std::vector<ClientData>::iterator it_client)
+{
+    std::cerr << RED << "Client disconnected" << NOCOLOR << std::endl;
+    close(_sockets[socket_num].fd);
+    _sockets.erase(_sockets.begin() + socket_num);
+    clients_vec.erase(it_client);
+    it_client->~ClientData();
+}
+
 

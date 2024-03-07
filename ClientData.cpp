@@ -13,8 +13,10 @@ void		ClientData::setService(std::string service) { _service = service; }
 void 		ClientData::setNickName(std::string newNickName){this->_NickName = newNickName;}
 void 		ClientData::setLoginName(std::string newLoginName){this->_LoginName = newLoginName;}
 void 		ClientData::setRealName(std::string newRealName){this->_RealName = newRealName;}
+void		ClientData::setSuper(bool i) { _super = i; }
 int 		ClientData::getSocket(){return _socket;}
 int 		ClientData::getFd(){return _socket;}
+bool		ClientData::getSuper() { return (_super); }
 ClientData &ClientData::operator=(const ClientData &other)
 {
     if (this != &other)
