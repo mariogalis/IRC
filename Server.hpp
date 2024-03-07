@@ -3,6 +3,7 @@
 
 #include "Irc.hpp"
 
+
 #define MAX_CLIENTS 10
 #define BUFFER_SIZE 1024
 #define HOSTLEN 64
@@ -28,6 +29,7 @@ class Server
         int ReceiveDataClient(size_t socket_num, char *buffer);
         void deleteClient(size_t socket_num, std::vector<ClientData>::iterator it_client);
         void CloseServer();
+        static void CloseServer01();
     private:
         Server(const Server &other);
         Server	&operator=(const Server &other);
@@ -37,8 +39,8 @@ class Server
         std::vector<ClientData> clients_vec;
         std::vector<pollfd>		_sockets;
         bool _ServerStatus;
-        //std::vector<ChannelData> channel_vec;
+        bool _CloseServer;
+        
 
 };
-
 #endif

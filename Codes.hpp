@@ -2,6 +2,7 @@
 # define CODES_HPP
 
 // CLIENT-SERVER						000 - 099
+# define    RPL_NONE                    "000"
 # define	RPL_WELCOME					"001"
 
 // -- COMMAND RESPONSES					200 - 399

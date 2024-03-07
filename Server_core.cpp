@@ -1,5 +1,13 @@
 #include "Server.hpp"
 
+bool RunServer = true;
+
+void UseCtrl(int signal)
+{
+    signal = 0;
+    RunServer = false;
+}
+
 Server::Server(std::string const port, std::string const pass) : _port(port), _pass(pass){_supass = "supermario";}
 Server::Server(const Server &other){*this = other;}
 Server::~Server(){}
@@ -107,15 +115,10 @@ int Server::Start()
     _sockets[0].fd = server_socket;
     _sockets[0].events = POLLIN;
     std::cout << "Servidor IRC escuchando en el puerto " << _port << std::endl;
-    while (1) 
+    signal(SIGINT, UseCtrl);
+    while (RunServer)
     {
-        // std::getline(std::cin, input);
-        // if(input == "exit")
-        // {
-        //     CloseServer();
-        //     break;
-        // }
-        if(poll(&_sockets[0], _sockets.size(), 1000) == -1)
+        if(poll(&_sockets[0], _sockets.size(), 1000) == -1 && RunServer)
             std::cerr << RED << "Error poll" << NOCOLOR << std::endl;
         for(size_t socket_num = 0; socket_num < _sockets.size(); socket_num++)
         {
@@ -137,7 +140,7 @@ int Server::Start()
             }
         }
     }
-    close(server_socket);
+    CloseServer();
     return 0;
 }
 

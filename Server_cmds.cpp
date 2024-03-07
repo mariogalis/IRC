@@ -103,6 +103,7 @@ int Server::processCommand(const std::string& command, ClientData &client, size_
         }
         else 
         {
+            sendToUser(&client, makeUserMsg(&client, RPL_NONE, "Comando no reconocido"));
             std::cout << "Comando no reconocido: " << ircCommand << std::endl;
         }
     }

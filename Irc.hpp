@@ -24,6 +24,7 @@
 # include <termios.h>
 # include <iostream>
 # include <cstring>
+# include <csignal>
 
 # include "ClientData.hpp"
 # include "ChannelData.hpp"
