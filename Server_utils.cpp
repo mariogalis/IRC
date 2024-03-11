@@ -1,5 +1,16 @@
 #include "Server.hpp"
 
+ClientData& Server::find_ClientData_Nickname(std::string str)
+{
+    for (std::vector<ClientData>::iterator it = clients_vec.begin(); it != clients_vec.end(); ++it)
+    {
+        if (it->getNickName() == str)
+            return *it; // Devuelve una referencia a la clase ClientData encontrada
+    }
+    // Si no se encuentra ninguna coincidencia, devuelve una referencia al último elemento (equivalente a end())
+    return clients_vec.back();
+}
+
 std::vector<ClientData>::iterator	Server::find_ClientData_Socket(int fd)
 {
     for (std::vector<ClientData>::iterator it = clients_vec.begin(); it != clients_vec.end(); ++it)
@@ -8,7 +19,6 @@ std::vector<ClientData>::iterator	Server::find_ClientData_Socket(int fd)
 			return (it);
 	}
 	return (clients_vec.end());
-
 }
 
 char *getIP()
@@ -90,4 +100,17 @@ void	Server::deleteClient(size_t socket_num, std::vector<ClientData>::iterator i
     it_client->~ClientData();
 }
 
+std::string	Server::makePrivMsg(ClientData *sender, std::string input)
+{
+	std::ostringstream 	message;
+	message << ":" << sender->getNickName() << " " << input << "\r\n";
+	return (message.str());
+}
 
+void Server::send_PersonalMessage(std::string name, std::string message, ClientData *sender)
+{
+    ClientData &receiver = find_ClientData_Nickname(name);
+    std::cerr << RED << sender->getNickName() << "envia un mensaje a " << receiver.getNickName() << NOCOLOR << std::endl;
+    sendToUser(&receiver, makeUserMsg(&receiver, RPL_TRACENEWTYPE, "SUPERUSUARIO"));
+    sendToUser(&receiver, makePrivMsg(sender, message));
+}
