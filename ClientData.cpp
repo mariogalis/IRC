@@ -37,7 +37,7 @@ int	ClientData::CreateClientData(int fd, struct sockaddr * addr, socklen_t addrl
 
 	if (getnameinfo(addr, addrlen, host, sizeof(host), service, sizeof(service), NI_NUMERICHOST) != 0)
 	{
-		std::cerr << RED << "Error. Couldn't retrieve hostname." << NOCOLOR << std::endl;
+		std::cerr << RED << "Error. Couldn't retrieve hostname" << NOCOLOR << std::endl;
 		close(fd);
 		delete temp;
 		return (0) ;

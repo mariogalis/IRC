@@ -42,7 +42,7 @@ int Server::CreateNewUser(struct sockaddr_storage client_addr, int server_socket
         buffer[bytes_received] = '\0';
         if (bytes_received <= 0) 
         {
-            std::cerr << "Error al recibir el nombre del cliente" << std::endl;
+            std::cerr << "Error receiving client name" << std::endl;
             _sockets.erase(_sockets.begin() + i);
             close(client_socket);
             continue;
@@ -56,7 +56,8 @@ int Server::CreateNewUser(struct sockaddr_storage client_addr, int server_socket
             {
                 _sockets.erase(_sockets.end() - 1);
                 close(client_socket);
-                std::cerr << "CERRADO!" << std::endl;
+                std::cerr << RED << "The user could not connect" << NOCOLOR << std::endl;
+                tokens.clear();
                 return 1;
             }
         }
@@ -101,7 +102,7 @@ void Server::CloseServer()
     for(size_t client_num = 0; client_num < clients_vec.size(); client_num++)
         clients_vec[client_num].~ClientData();
     clients_vec.clear();
-    std::cout << RED << "||Servidor cerrado||" << NOCOLOR << std::endl;
+    std::cout << RED << "||Close server||" << NOCOLOR << std::endl;
 }
 
 int Server::Start()
@@ -114,7 +115,7 @@ int Server::Start()
     _sockets.push_back(pollfd());
     _sockets[0].fd = server_socket;
     _sockets[0].events = POLLIN;
-    std::cout << "Servidor IRC escuchando en el puerto " << _port << std::endl;
+    std::cout << "IRC server listening on port " << _port << std::endl;
     signal(SIGINT, UseCtrl);
     while (RunServer)
     {

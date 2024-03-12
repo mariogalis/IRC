@@ -34,13 +34,13 @@ char *getIP()
             strcpy(ip, inet_ntoa(*(struct in_addr *)hostinfo->h_addr));
         else 
         {
-            std::cerr << "Error al obtener la dirección IP del host." << std::endl;
+            std::cerr << "Error getting host IP address" << std::endl;
             return nullptr;
         }
     } 
     else 
     {
-        std::cerr << "Error al obtener el nombre del host." << std::endl;
+        std::cerr << "Error getting hostname" << std::endl;
         return nullptr;
     }
 
@@ -56,7 +56,7 @@ int Server::create_serversocket()
 
         if (!(ss >> valorHost)) 
         {
-            std::cerr << "Error: No se pudo convertir la cadena a uint16_t." << std::endl;
+            std::cerr << "Error: Could not convert string to uint16_t" << std::endl;
             exit(0);
         }
 
@@ -65,14 +65,14 @@ int Server::create_serversocket()
         addr.sin_port = htons(valorHost);
 
         addr.sin_addr.s_addr = inet_addr(getIP());
-        std::cout << BLUE << "IP local: " << getIP() << NOCOLOR << std::endl;
+        std::cout << BLUE << "Local IP: " << getIP() << NOCOLOR << std::endl;
         int bindResult = bind(server_socket, (struct sockaddr *)&addr, sizeof(addr));
         if (bindResult == -1)
             perror("bindResult");
         int listenResult = listen(server_socket, 5);
         if (listenResult == -1)
             perror("listenResult");
-        std::cerr << "server start" << std::endl;
+        std::cout << GREEN << "Server start" << NOCOLOR << std::endl;
         return server_socket;
 }
 
@@ -117,8 +117,16 @@ std::string	Server::makePrivMsg(ClientData *sender, ClientData *receiver , std::
 
 void Server::send_PersonalMessage(std::string name, std::string message, ClientData *sender)
 {
-    ClientData &receiver = find_ClientData_Nickname(name);
-    sendToUser(&receiver, makePrivMsg(sender, &receiver, message));
-    
+    for (std::vector<ClientData>::iterator it = clients_vec.begin(); it != clients_vec.end(); ++it)
+    {
+        if (it->getNickName() == name)
+        {
+            ClientData &receiver = *it; // Devuelve una referencia a la clase ClientData encontrada
+            sendToUser(&receiver, makePrivMsg(sender, &receiver, message));
+            return ;
+        } 
+    }
+    std::cerr << RED << "A client tried to contact a non-existent client" << NOCOLOR << std::endl;
+    return ;
 }
 

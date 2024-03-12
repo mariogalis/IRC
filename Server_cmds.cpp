@@ -34,6 +34,14 @@ int Server::firstCommand(const std::string& command, ClientData *client)
         {
             std::string newNickName = tokens[1];
             newNickName.pop_back();
+            for (std::vector<ClientData>::iterator it = clients_vec.begin(); it != clients_vec.end(); ++it)
+            {
+                if (it->getNickName() == newNickName)
+                {
+                    std::cerr << RED << "The user tried to connect with an already registered nickname" << NOCOLOR << std::endl;
+                    return(1);
+                }
+            }
             client->setNickName(newNickName);
             return 0;
         }
@@ -48,9 +56,8 @@ int Server::firstCommand(const std::string& command, ClientData *client)
         }
         else 
         {
-            std::cout << "Error en comandos iniciales" << ircCommand << std::endl;
-            std::cerr << "Cliente desconectado" << std::endl;
-            return 0;
+            std::cout << "Error in initial commands" << ircCommand << std::endl;
+            return 1;
         }
     }
     return 1;
@@ -78,10 +85,7 @@ int Server::processCommand(const std::string& command, ClientData &client, size_
             if(tokens[1][0] == '#')
                 std::cout << "Quiere enviar un mensaje al canal " << tokens[1] << std::endl;
             else
-            {
                 send_PersonalMessage(tokens[1], tokens[2], &client);
-                std::cout << "Mensaje para " << tokens[1] << ": " << tokens[2] << std::endl;
-            }
         }
         else if(ircCommand == "SU")
         {
@@ -109,8 +113,8 @@ int Server::processCommand(const std::string& command, ClientData &client, size_
         }
         else 
         {
-            sendToUser(&client, makeUserMsg(&client, RPL_NONE, "Comando no reconocido"));
-            std::cout << "Comando no reconocido: " << ircCommand << std::endl;
+            sendToUser(&client, makeUserMsg(&client, RPL_NONE, "Unrecognized command"));
+            std::cout << "Unrecognized command: " << ircCommand << std::endl;
         }
     }
     return (0);
