@@ -83,10 +83,17 @@ std::string	Server::makeUserMsg(ClientData *user, std::string code, std::string 
 	return (message.str());
 }
 
+std::string	Server::makeUserMsg01(ClientData *user, std::string input)
+{
+	std::ostringstream 	message;
+	message << ":" << user->getHostname() << " " << user->getNickName() << " :" << input << "\r\n";
+	return (message.str());
+}
+
 void	Server::sendToUser(ClientData *targetUser, std::string message)
 {
-	std::ostringstream debug;
-	debug << "OUTGOING USER_MSG TO : " << targetUser->getNickName() << " :\n" << message; 
+	//std::ostringstream debug;
+	//std::cerr << "OUTGOING USER_MSG TO : " << targetUser->getNickName() << " :\n" << message; 
 	if (send(targetUser->getFd(), message.c_str(), message.size(), 0) < 0)
 		throw std::invalid_argument(" > Error at sendToUser() ");
 }
@@ -100,17 +107,18 @@ void	Server::deleteClient(size_t socket_num, std::vector<ClientData>::iterator i
     it_client->~ClientData();
 }
 
-std::string	Server::makePrivMsg(ClientData *sender, std::string input)
+std::string	Server::makePrivMsg(ClientData *sender, ClientData *receiver , std::string input)
 {
 	std::ostringstream 	message;
-	message << ":" << sender->getNickName() << " " << input << "\r\n";
+	message << ":" << sender->getNickName() << " PRIVMSG " <<  receiver->getNickName() << " " << input << "\r\n";
+    std::cerr << RED << message.str() << NOCOLOR << std::endl;
 	return (message.str());
 }
 
 void Server::send_PersonalMessage(std::string name, std::string message, ClientData *sender)
 {
     ClientData &receiver = find_ClientData_Nickname(name);
-    std::cerr << RED << sender->getNickName() << "envia un mensaje a " << receiver.getNickName() << NOCOLOR << std::endl;
-    sendToUser(&receiver, makeUserMsg(&receiver, RPL_TRACENEWTYPE, "SUPERUSUARIO"));
-    sendToUser(&receiver, makePrivMsg(sender, message));
+    sendToUser(&receiver, makePrivMsg(sender, &receiver, message));
+    
 }
+

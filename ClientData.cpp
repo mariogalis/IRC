@@ -17,6 +17,7 @@ void		ClientData::setSuper(bool i) { _super = i; }
 int 		ClientData::getSocket(){return _socket;}
 int 		ClientData::getFd(){return _socket;}
 bool		ClientData::getSuper() { return (_super); }
+std::string	ClientData::getLastMsg(void) const	{ return (this->_lastMsg); }
 ClientData &ClientData::operator=(const ClientData &other)
 {
     if (this != &other)
@@ -48,4 +49,15 @@ int	ClientData::CreateClientData(int fd, struct sockaddr * addr, socklen_t addrl
 	temp->setService(std::string (service));
 
 	return (0);
+}
+
+void		ClientData::setLastMsg(std::string msg)
+{
+	if (msg.empty())
+	{
+		if (!this->_lastMsg.empty())
+			this->_lastMsg.clear();
+	}
+	else
+		this->_lastMsg = msg;
 }

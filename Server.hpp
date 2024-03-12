@@ -27,6 +27,7 @@ class Server
         std::vector<ClientData>::iterator find_ClientData_Socket(int fd);
         void sendToUser(ClientData *targetUser, std::string message);
         std::string makeUserMsg(ClientData *user, std::string code, std::string input);
+        std::string	makeUserMsg01(ClientData *user, std::string input);
         int CreateNewUser(struct sockaddr_storage client_addr, int server_socket, char *buffer);
         int ReceiveDataClient(size_t socket_num, char *buffer);
         void deleteClient(size_t socket_num, std::vector<ClientData>::iterator it_client);
@@ -35,7 +36,7 @@ class Server
         //std::string makeChanMsg(ClientData *user, std::string input);
         //std::string Server::makeChanMsg(ClientData *user, std::string code, std::string input);
         void send_PersonalMessage(std::string name, std::string message, ClientData *sender);
-        std::string	makePrivMsg(ClientData *sender, std::string input);
+        std::string	makePrivMsg(ClientData *sender, ClientData *receiver , std::string input);
         ClientData& find_ClientData_Nickname(std::string str);
         ClientData	*findUser(std::string str);
 

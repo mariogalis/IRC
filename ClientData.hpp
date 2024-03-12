@@ -20,6 +20,7 @@ public:
     void setHost(std::string host);
     void setService(std::string service);
     void setSuper(bool i);
+    void setLastMsg(std::string msg);
 
     //GETTERS
     int getSocket();
@@ -29,6 +30,7 @@ public:
     std::string getRealName();
     std::string getHostname();
     bool        getSuper();
+    std::string getLastMsg		(void) const;
 
 private:
     bool        _super;
@@ -38,6 +40,7 @@ private:
     std::string _RealName;
     std::string	_host;
     std::string	_service;
+    std::string	_lastMsg;
 };
 
 #endif

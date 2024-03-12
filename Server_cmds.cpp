@@ -75,13 +75,13 @@ int Server::processCommand(const std::string& command, ClientData &client, size_
         } 
         else if (ircCommand == "PRIVMSG") 
         {
-            // if(tokens[1][0] == '#')
-            //     inChannelCmds(command, *it_client, socket_num, it_client);
-            // else
-            // {
+            if(tokens[1][0] == '#')
+                std::cout << "Quiere enviar un mensaje al canal " << tokens[1] << std::endl;
+            else
+            {
                 send_PersonalMessage(tokens[1], tokens[2], &client);
                 std::cout << "Mensaje para " << tokens[1] << ": " << tokens[2] << std::endl;
-            //}
+            }
         }
         else if(ircCommand == "SU")
         {
