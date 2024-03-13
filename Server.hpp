@@ -9,7 +9,6 @@
 #define HOSTLEN 64
 
 class ClientData;
-class ChannelData;
 
 class Server
 {

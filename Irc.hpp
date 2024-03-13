@@ -27,7 +27,6 @@
 # include <csignal>
 
 # include "ClientData.hpp"
-# include "ChannelData.hpp"
 # include "Server.hpp"
 
 # include "Codes.hpp"
