@@ -80,24 +80,24 @@ int Server::create_serversocket()
         return server_socket;
 }
 
-std::string	Server::makeUserMsg(ClientData *user, std::string code, std::string input)
+std::string	makeUserMsg(ClientData *user, std::string code, std::string input)
 {
 	std::ostringstream 	message;
 	message << ":" << user->getHostname() << " " << code << " " << user->getNickName() << " :" << input << "\r\n";
 	return (message.str());
 }
 
-std::string	Server::makeUserMsg01(ClientData *user, std::string input)
+std::string	makeUserMsg01(ClientData *user, std::string input)
 {
 	std::ostringstream 	message;
 	message << ":" << user->getHostname() << " " << user->getNickName() << " :" << input << "\r\n";
 	return (message.str());
 }
 
-void	Server::sendToUser(ClientData *targetUser, std::string message)
+void	sendToUser(ClientData *targetUser, std::string message)
 {
-	//std::ostringstream debug;
-	//std::cerr << "OUTGOING USER_MSG TO : " << targetUser->getNickName() << " :\n" << message; 
+	std::ostringstream debug;
+	std::cerr << "OUTGOING USER_MSG TO : " << targetUser->getNickName() << " :\n" << message; 
 	if (send(targetUser->getFd(), message.c_str(), message.size(), 0) < 0)
 		throw std::invalid_argument(" > Error at sendToUser() ");
 }
@@ -114,7 +114,11 @@ void	Server::deleteClient(size_t socket_num, std::vector<ClientData>::iterator i
 std::string	Server::makePrivMsg(ClientData *sender, ClientData *receiver , std::string input)
 {
 	std::ostringstream 	message;
-	message << ":" << sender->getNickName() << " PRIVMSG " <<  receiver->getNickName() << " " << input << "\r\n";
+    std::cerr << GREEN << input << NOCOLOR << std::endl;
+    if(input[0] != ':')
+	    message << ":" << sender->getNickName() << " PRIVMSG " <<  receiver->getNickName() << " :" << input << "\r\n";
+    else
+        message << ":" << sender->getNickName() << " PRIVMSG " <<  receiver->getNickName() << " " << input << "\r\n";
     std::cerr << RED << message.str() << NOCOLOR << std::endl;
 	return (message.str());
 }
@@ -123,13 +127,14 @@ void Server::send_PersonalMessage(std::vector<std::string> args, ClientData *sen
 {
     std::string name = args[1];
     std::string message;
-    for (size_t i = 1; i < args.size(); ++i) 
+    for (size_t i = 2; i < args.size(); ++i) 
     {
-        message+= args[i];
+        message += args[i];
         if (i < args.size() - 1) {
             message += " ";
         }
     }
+
     for (std::vector<ClientData>::iterator it = clients_vec.begin(); it != clients_vec.end(); ++it)
     {
         if (it->getNickName() == name)

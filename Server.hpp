@@ -25,9 +25,7 @@ class Server
         int suCommand(const std::string& command, std::vector<ClientData>::iterator it_client);
         //int inChannelCmds(const std::string& command, ClientData &client, size_t socket_num, std::vector<ClientData>::iterator it_client);
         std::vector<ClientData>::iterator find_ClientData_Socket(int fd);
-        void sendToUser(ClientData *targetUser, std::string message);
-        std::string makeUserMsg(ClientData *user, std::string code, std::string input);
-        std::string	makeUserMsg01(ClientData *user, std::string input);
+        //void sendToUser(ClientData *targetUser, std::string message);
         int CreateNewUser(struct sockaddr_storage client_addr, int server_socket, char *buffer);
         int ReceiveDataClient(size_t socket_num, char *buffer);
         void deleteClient(size_t socket_num, std::vector<ClientData>::iterator it_client);
@@ -53,4 +51,8 @@ class Server
         
 
 };
+
+void sendToUser(ClientData *targetUser, std::string message);
+std::string makeUserMsg(ClientData *user, std::string code, std::string input);
+std::string	makeUserMsg01(ClientData *user, std::string input);
 #endif
