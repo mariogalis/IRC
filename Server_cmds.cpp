@@ -1,27 +1,21 @@
 #include "Server.hpp"
 
 
-int Server::firstCommand(const std::string& command, ClientData *client) 
+int Server::firstCommand(std::vector<std::string> args, ClientData *client) 
 {
-    std::istringstream iss(command);
-    std::string token;
-    std::vector<std::string> tokens;
     std::vector<ClientData*>::iterator it;
 
-    while (std::getline(iss, token, ' '))
-        tokens.push_back(token);
-
-    if (!tokens.empty()) 
+    if (!args.empty()) 
     {
-        std::string ircCommand = tokens[0];
+        std::string ircCommand = args[0];
         if(ircCommand == "PASS")
-        {
-            std::string tryPass = tokens[1];
+        { 
+            std::string tryPass = args[1];
             std::string myPass = _pass;
-            tryPass.pop_back();
             if(myPass.compare(tryPass) != 0)
             {
                 std::cerr << "The client tried to log in with an incorrect password" << std::endl;
+                std::cerr << "|" << tryPass << "|" << std::endl;
                 return 1;
             }
             else
@@ -32,8 +26,7 @@ int Server::firstCommand(const std::string& command, ClientData *client)
         }
         else if(ircCommand == "NICK")
         {
-            std::string newNickName = tokens[1];
-            newNickName.pop_back();
+            std::string newNickName = args[1];
             for (std::vector<ClientData>::iterator it = clients_vec.begin(); it != clients_vec.end(); ++it)
             {
                 if (it->getNickName() == newNickName)
@@ -47,49 +40,41 @@ int Server::firstCommand(const std::string& command, ClientData *client)
         }
         else if(ircCommand == "USER")
         {
-            std::string newLogin = tokens[1];
-            std::string newReal = tokens[4];
-            newReal.pop_back();
+            std::string newLogin = args[1];
+            std::string newReal = args[4];
             client->setLoginName(newLogin);
             client->setRealName(newReal);
             return 0;
         }
         else 
         {
-            std::cout << "Error in initial commands" << ircCommand << std::endl;
+            std::cout << "Error in initial commands -> " << ircCommand <<  " ?" << std::endl;
             return 1;
         }
     }
     return 1;
 }
 
-int Server::processCommand(const std::string& command, ClientData &client, size_t socket_num, std::vector<ClientData>::iterator it_client) 
+int Server::processCommand(std::vector<std::string> args, ClientData &client, size_t socket_num, std::vector<ClientData>::iterator it_client) 
 {
-    std::istringstream iss(command);
-    std::string token;
-    std::vector<std::string> tokens;
-
-    while (std::getline(iss, token, ' '))
-        tokens.push_back(token);
-
-    if (!tokens.empty()) 
+    if (!args.empty()) 
     {
-        std::string ircCommand = tokens[0];
+        std::string ircCommand = args[0];
 
         if (ircCommand == "JOIN") 
         {
-            std::cout << "Usuario desea unirse al canal: " << tokens[1] << std::endl;
+            std::cout << "Usuario desea unirse al canal: " << args[1] << std::endl;
         } 
         else if (ircCommand == "PRIVMSG") 
         {
-            if(tokens[1][0] == '#')
-                std::cout << "Quiere enviar un mensaje al canal " << tokens[1] << std::endl;
+            if(args[1][0] == '#')
+                std::cout << "Quiere enviar un mensaje al canal " << args[1] << std::endl;
             else
-                send_PersonalMessage(tokens[1], tokens[2], &client);
+                send_PersonalMessage(args, &client);
         }
         else if(ircCommand == "SU")
         {
-            std::string su_pass = tokens[1];
+            std::string su_pass = args[1];
             std::string my_pass = _supass;
             su_pass.pop_back();
             su_pass.pop_back();

@@ -20,8 +20,8 @@ class Server
         int create_serversocket();
         bool CheckPassword(std::string buffer);
         bool CheckNickName(char* buffer);
-        int processCommand(const std::string& command, ClientData &client, size_t socket_num, std::vector<ClientData>::iterator it_client);
-        int firstCommand(const std::string& command, ClientData *client);
+        int processCommand(std::vector<std::string> args, ClientData &client, size_t socket_num, std::vector<ClientData>::iterator it_client);
+        int firstCommand(std::vector<std::string> args, ClientData *client);
         int suCommand(const std::string& command, std::vector<ClientData>::iterator it_client);
         //int inChannelCmds(const std::string& command, ClientData &client, size_t socket_num, std::vector<ClientData>::iterator it_client);
         std::vector<ClientData>::iterator find_ClientData_Socket(int fd);
@@ -35,11 +35,11 @@ class Server
         static void CloseServer01();
         //std::string makeChanMsg(ClientData *user, std::string input);
         //std::string Server::makeChanMsg(ClientData *user, std::string code, std::string input);
-        void send_PersonalMessage(std::string name, std::string message, ClientData *sender);
+        void send_PersonalMessage(std::vector<std::string> args, ClientData *sender);
         std::string	makePrivMsg(ClientData *sender, ClientData *receiver , std::string input);
         ClientData& find_ClientData_Nickname(std::string str);
         ClientData	*findUser(std::string str);
-
+        std::vector<std::string> splitString(std::string str, const char *dlmtrs);
     private:
         Server(const Server &other);
         Server	&operator=(const Server &other);

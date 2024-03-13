@@ -39,29 +39,26 @@ int Server::CreateNewUser(struct sockaddr_storage client_addr, int server_socket
     for(int i = 0; i < 3; i++)
     {
         int bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
-        buffer[bytes_received] = '\0';
+        std::string str;
+	    str.assign(buffer, 0, bytes_received);
+        std::vector<std::string> args = splitString(str, " \r\n");
         if (bytes_received <= 0) 
         {
             std::cerr << "Error receiving client name" << std::endl;
             _sockets.erase(_sockets.begin() + i);
             close(client_socket);
+            args.clear();
             continue;
         }
-        std::istringstream iss(buffer);
-        while (std::getline(iss, token, '\n'))
-            tokens.push_back(token);
-        for (size_t j = 0; j < tokens.size(); ++j)
+        if(firstCommand(args, &client) != 0)
         {
-            if(firstCommand(tokens[j], &client) != 0)
-            {
-                _sockets.erase(_sockets.end() - 1);
-                close(client_socket);
-                std::cerr << RED << "The user could not connect" << NOCOLOR << std::endl;
-                tokens.clear();
-                return 1;
-            }
+            _sockets.erase(_sockets.end() - 1);
+            close(client_socket);
+            std::cerr << RED << "The user could not connect" << NOCOLOR << std::endl;
+            args.clear();
+            return 1;
         }
-        tokens.clear();
+        args.clear();
     }
     std::cout << GREEN << "New user connected :)" << NOCOLOR << std::endl;
     clients_vec.push_back(client);
@@ -73,6 +70,9 @@ int Server::ReceiveDataClient(size_t socket_num, char *buffer)
 {
     int bytes;
     bytes = recv(_sockets[socket_num].fd , buffer, BUFFER_SIZE, 0);
+    std::string str;
+    str.assign(buffer, 0, bytes);
+    std::vector<std::string> args = splitString(str, " \r\n");
     std::vector<ClientData>::iterator it_client = find_ClientData_Socket(_sockets[socket_num].fd);
     if(it_client == clients_vec.end())
     {
@@ -86,9 +86,8 @@ int Server::ReceiveDataClient(size_t socket_num, char *buffer)
     }
     else
     {
-        buffer[bytes] = '\0';
-        std::cout << it_client->getNickName() << " : " << buffer << std::endl;
-        if(processCommand(buffer, *it_client, socket_num, it_client) != 0)
+        std::cout << it_client->getNickName() << " : " << str << std::endl;
+        if(processCommand(args, *it_client, socket_num, it_client) != 0)
             return(2);
         return(0);
     }
@@ -110,7 +109,6 @@ int Server::Start()
     std::string input;
     int server_socket;
     struct sockaddr_storage client_addr;
-    char buffer[BUFFER_SIZE];
     server_socket = create_serversocket();
     _sockets.push_back(pollfd());
     _sockets[0].fd = server_socket;
@@ -123,6 +121,8 @@ int Server::Start()
             std::cerr << RED << "Error poll" << NOCOLOR << std::endl;
         for(size_t socket_num = 0; socket_num < _sockets.size(); socket_num++)
         {
+            char buffer[BUFFER_SIZE];
+            bzero (buffer, BUFFER_SIZE);
             if(_sockets[socket_num].revents & POLLIN)
             {
                 if(_sockets[socket_num].fd == server_socket)
@@ -139,6 +139,8 @@ int Server::Start()
                         return(0);
                 }
             }
+        if(RunServer == false)
+			break;
         }
     }
     CloseServer();

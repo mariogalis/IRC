@@ -57,13 +57,17 @@ int Server::create_serversocket()
         if (!(ss >> valorHost)) 
         {
             std::cerr << "Error: Could not convert string to uint16_t" << std::endl;
-            exit(0);
+            CloseServer();
+        } 
+        const int reuse = 1;
+        if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int)) < 0)
+        {
+            std::cerr << "Error at setsocketopt(): " << std::endl;
+            CloseServer();
         }
-
         struct sockaddr_in addr;
         addr.sin_family = AF_INET;
         addr.sin_port = htons(valorHost);
-
         addr.sin_addr.s_addr = inet_addr(getIP());
         std::cout << BLUE << "Local IP: " << getIP() << NOCOLOR << std::endl;
         int bindResult = bind(server_socket, (struct sockaddr *)&addr, sizeof(addr));
@@ -115,8 +119,17 @@ std::string	Server::makePrivMsg(ClientData *sender, ClientData *receiver , std::
 	return (message.str());
 }
 
-void Server::send_PersonalMessage(std::string name, std::string message, ClientData *sender)
+void Server::send_PersonalMessage(std::vector<std::string> args, ClientData *sender)
 {
+    std::string name = args[1];
+    std::string message;
+    for (size_t i = 1; i < args.size(); ++i) 
+    {
+        message+= args[i];
+        if (i < args.size() - 1) {
+            message += " ";
+        }
+    }
     for (std::vector<ClientData>::iterator it = clients_vec.begin(); it != clients_vec.end(); ++it)
     {
         if (it->getNickName() == name)
@@ -126,7 +139,24 @@ void Server::send_PersonalMessage(std::string name, std::string message, ClientD
             return ;
         } 
     }
+    sendToUser(sender, makeUserMsg(sender, ERR_ERRONEUSNICKNAME, "The client you want to send the message to does not exist"));
     std::cerr << RED << "A client tried to contact a non-existent client" << NOCOLOR << std::endl;
     return ;
 }
 
+std::vector<std::string>	Server::splitString(std::string str, const char *dlmtrs)
+{
+	std::vector<std::string> args;
+
+
+	char	*ptr = strtok((char *)str.c_str(), dlmtrs);
+
+//	NOTE : strtok works iteratively, so it needs to be called once per token
+	while (ptr != nullptr && !std::string(ptr).empty())
+	{
+		args.push_back(std::string(ptr));
+		ptr = strtok(NULL, dlmtrs);
+	}
+
+	return args;
+}
