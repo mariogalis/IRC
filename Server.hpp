@@ -37,6 +37,7 @@ class Server
         ClientData& find_ClientData_Nickname(std::string str);
         ClientData	*findUser(std::string str);
         std::vector<std::string> splitString(std::string str, const char *dlmtrs);
+        void sendWelcomeMessageToUser(ClientData* client);
     private:
         Server(const Server &other);
         Server	&operator=(const Server &other);

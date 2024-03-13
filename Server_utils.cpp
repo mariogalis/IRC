@@ -97,7 +97,7 @@ std::string	makeUserMsg01(ClientData *user, std::string input)
 void	sendToUser(ClientData *targetUser, std::string message)
 {
 	std::ostringstream debug;
-	std::cerr << "OUTGOING USER_MSG TO : " << targetUser->getNickName() << " :\n" << message; 
+	//std::cerr << "OUTGOING USER_MSG TO : " << targetUser->getNickName() << " :\n" << message; 
 	if (send(targetUser->getFd(), message.c_str(), message.size(), 0) < 0)
 		throw std::invalid_argument(" > Error at sendToUser() ");
 }
@@ -114,12 +114,10 @@ void	Server::deleteClient(size_t socket_num, std::vector<ClientData>::iterator i
 std::string	Server::makePrivMsg(ClientData *sender, ClientData *receiver , std::string input)
 {
 	std::ostringstream 	message;
-    std::cerr << GREEN << input << NOCOLOR << std::endl;
     if(input[0] != ':')
 	    message << ":" << sender->getNickName() << " PRIVMSG " <<  receiver->getNickName() << " :" << input << "\r\n";
     else
         message << ":" << sender->getNickName() << " PRIVMSG " <<  receiver->getNickName() << " " << input << "\r\n";
-    std::cerr << RED << message.str() << NOCOLOR << std::endl;
 	return (message.str());
 }
 
@@ -148,6 +146,46 @@ void Server::send_PersonalMessage(std::vector<std::string> args, ClientData *sen
     std::cerr << RED << "A client tried to contact a non-existent client" << NOCOLOR << std::endl;
     return ;
 }
+
+void Server::sendWelcomeMessageToUser(ClientData* client) 
+{
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "____________________________________________________________________"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "/                                                                      \\"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|              Welcome to our IRC server!                              |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|                                                                      |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "| We're excited to have you join us in our vibrant community. Here's   |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "| a brief overview of the five default channels you can explore:       |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|                                                                      |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "| 1. #ALL - Topic: A public channel where everyone is welcome to       |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|    engage in discussions on various topics.                          |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|                                                                      |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "| 2. #NEWS - Topic: Stay updated with current news and events.         |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|                                                                      |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "| 3. #CARS - Topic: Dive into discussions about automobiles and        |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|    everything related to cars.                                       |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|                                                                      |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "| 4. #MUSIC - Topic: Explore the latest music releases and share your  |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|    favorite tunes.                                                   |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|                                                                      |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "| 5. #GAMES - Topic: Join the gaming community to discuss video games  |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|    and the latest releases.                                          |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|                                                                      |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "| 6. #MOVIES - Topic: Delve into conversations about classic films     |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|    and cinematic masterpieces.                                       |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|                                                                      |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "| Feel free to hop into any channel that interests you and start       |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "| chatting. NOTE THAT THE SERVER CHANELS AND TOPICS MAY CHANGE!!!!!    |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "|                                                                      |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "\\____________________________________________________________________/"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "          \\"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "           \\"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "            \\   ^__^"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "             \\  (oo)\\_______"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "                (__)\\       )\\/\\"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "                    ||----w |"));
+    sendToUser(client, makeUserMsg(client, RPL_WELCOME, "                    ||     ||"));
+}
+
 
 std::vector<std::string>	Server::splitString(std::string str, const char *dlmtrs)
 {

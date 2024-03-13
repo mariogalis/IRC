@@ -62,7 +62,7 @@ int Server::CreateNewUser(struct sockaddr_storage client_addr, int server_socket
     }
     std::cout << GREEN << "New user connected :)" << NOCOLOR << std::endl;
     clients_vec.push_back(client);
-    sendToUser(&client, makeUserMsg(&client, RPL_WELCOME, "Hola caracola!"));
+    sendWelcomeMessageToUser(&client);
     return 0;
 }
 

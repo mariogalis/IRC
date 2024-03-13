@@ -1,4 +1,4 @@
-SRCS	= main.cpp Server_core.cpp Server_cmds.cpp Server_utils.cpp
+SRCS	= main.cpp Server_core.cpp Server_cmds.cpp Server_utils.cpp ClientData.cpp ChannelData.cpp
 
 OBJS	= ${SRCS:.cpp=.o}
 
