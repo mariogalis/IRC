@@ -36,7 +36,7 @@ class ChannelData
 
 		//FUNCTIONS
 		
-		void	sendToChannel(ClientData *client, ChannelData *chanel, std::string message);
+		void	sendToChannel(ClientData *client, std::string message);
 		bool	isChanOp(ClientData *client);
 		void    makeUserOP(ClientData *OP, ClientData *client);
 		void    changeTopic(ClientData *client, std::string newtopic);
@@ -49,11 +49,11 @@ class ChannelData
 		bool		_topicRestrictions;
 		bool		_passwordRestrictions;
 		int			_serverlimit;
-		std::string _ChannelName;
-		std::string _pass;
-		std::string _topic;
-		std::vector<ClientData> _clientsVec;
-		std::vector<ClientData> _operatorsVec;
+		std::string	_ChannelName;
+		std::string	_pass;
+		std::string	_topic;
+		std::vector<ClientData>	_clientsVec;
+		std::vector<ClientData>	_operatorsVec;
 
 
 };

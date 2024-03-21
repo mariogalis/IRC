@@ -41,7 +41,7 @@ void    ChannelData::addUser(ClientData *client, std::string pass)
 {
 	if(this->_serverlimit > 0)
 	{
-		if(this->_clientsVec.size() > (size_t)this->_serverlimit)
+		if(this->_clientsVec.size() > this->_serverlimit)
 		{
 			sendToUser(client, makeUserMsg(client, ERR_NEEDMOREPARAMS, "Server is full"));
 			 this->_serverlimit++;
@@ -81,7 +81,6 @@ void    ChannelData::printTopic(ClientData *client)
 
 void    ChannelData::changeTopic(ClientData *client, std::string newtopic)
 {
-	newtopic.empty();
 	if(this->hasTopicRestrictions())
 		sendToUser(client, makeUserMsg(client, ERR_NOPRIVILEGES, "Error: This server does not allow to change the topic"));
 }
@@ -106,12 +105,27 @@ bool	ChannelData::isChanOp(ClientData *client)
 	return (false);
 }
 
-// void	ChannelData::sendToChannel(ClientData *client, ChannelData *chanel, std::string message)
-// {
+std::string	makePrivMsg(ClientData *sender, ClientData *receiver , std::string input)
+{
+	std::ostringstream 	message;
+    if(input[0] != ':')
+	    message << ":" << sender->getNickName() << " PRIVMSG " <<  receiver->getNickName() << " :" << input << "\r\n";
+    else
+        message << ":" << sender->getNickName() << " PRIVMSG " <<  receiver->getNickName() << " " << input << "\r\n";
+	return (message.str());
+}
 
-// 	for (std::vector<ClientData>::iterator it = this->_clientsVec.begin(); it != this->_clientsVec.end(); it++)
-// 	{
 
-// 	}										
+void	ChannelData::sendToChannel(ClientData *client, std::string message)
+{
+	if(_clientsVec.empty())
+		std::cout << "CAGASTE" << std::endl;
 
-// }
+	for (std::vector<ClientData>::iterator it = this->_clientsVec.begin(); it != this->_clientsVec.end(); it++)
+	{
+			std::cout << "Los users en el canal son = " << it->getNickName() << std::endl;
+			sendToUser(&(*it), makePrivMsg(client, &(*it), message));
+	}
+	//sendToUser(client, makeUserMsg(client, ERR_ERRONEUSNICKNAME, "The client you want to send the message to does not exist"));
+}
+

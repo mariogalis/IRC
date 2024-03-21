@@ -62,7 +62,8 @@ int Server::CreateNewUser(struct sockaddr_storage client_addr, int server_socket
     }
     std::cout << GREEN << "New user connected :)" << NOCOLOR << std::endl;
     clients_vec.push_back(client);
-    sendWelcomeMessageToUser(&client);
+    
+    sendToUser(&client, makeUserMsg(&client, RPL_WELCOME, "Hola caracola!"));
     return 0;
 }
 
@@ -104,6 +105,14 @@ void Server::CloseServer()
     std::cout << RED << "||Close server||" << NOCOLOR << std::endl;
 }
 
+void createChanels(std::vector<ChannelData> *channel_vec)
+{
+    ChannelData todos("All", "Channel for all");
+
+    channel_vec->push_back(todos);
+
+}
+
 int Server::Start()
 {
     std::string input;
@@ -115,6 +124,7 @@ int Server::Start()
     _sockets[0].events = POLLIN;
     std::cout << "IRC server listening on port " << _port << std::endl;
     signal(SIGINT, UseCtrl);
+    createChanels(&_channel_vec);
     while (RunServer)
     {
         if(poll(&_sockets[0], _sockets.size(), 1000) == -1 && RunServer)

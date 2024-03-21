@@ -55,6 +55,21 @@ int Server::firstCommand(std::vector<std::string> args, ClientData *client)
     return 1;
 }
 
+void   Server::findchannel(std::vector<std::string> args, ClientData *client)
+{
+    std::string channelName =  args[1];
+
+    for (std::vector<ChannelData>::iterator it = _channel_vec.begin(); it != _channel_vec.end(); ++it) 
+    {
+        if ("#" + it->getChannelName() == channelName) 
+        {
+            it->sendToChannel(client, args[2]);
+                return;
+        }
+    }
+    std::cout << "Canal no encontrado." << std::endl;
+}
+
 int Server::processCommand(std::vector<std::string> args, ClientData &client, size_t socket_num, std::vector<ClientData>::iterator it_client) 
 {
     if (!args.empty()) 
@@ -68,7 +83,7 @@ int Server::processCommand(std::vector<std::string> args, ClientData &client, si
         else if (ircCommand == "PRIVMSG") 
         {
             if(args[1][0] == '#')
-                std::cout << "Quiere enviar un mensaje al canal " << args[1] << std::endl;
+                findchannel(args, &client);
             else
                 send_PersonalMessage(args, &client);
         }

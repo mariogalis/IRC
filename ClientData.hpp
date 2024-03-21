@@ -33,6 +33,7 @@ public:
     std::string getLastMsg		(void) const;
 
 private:
+    std::vector<std::string> _channels;
     bool        _super;
     int         _socket;
     std::string _NickName;

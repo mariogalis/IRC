@@ -9,6 +9,7 @@
 #define HOSTLEN 64
 
 class ClientData;
+class ChannelData;
 
 class Server
 {
@@ -37,7 +38,7 @@ class Server
         ClientData& find_ClientData_Nickname(std::string str);
         ClientData	*findUser(std::string str);
         std::vector<std::string> splitString(std::string str, const char *dlmtrs);
-        void sendWelcomeMessageToUser(ClientData* client);
+        void findchannel(std::vector<std::string> args, ClientData *client);
     private:
         Server(const Server &other);
         Server	&operator=(const Server &other);
@@ -45,6 +46,7 @@ class Server
         std::string _pass;
         std::string _supass;
         std::vector<ClientData> clients_vec;
+        std::vector<ChannelData> _channel_vec;
         std::vector<pollfd>		_sockets;
         bool _ServerStatus;
         bool _CloseServer;
